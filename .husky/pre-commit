@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd backend
+
+# Prevent committing sensitive files
+echo "🔒 Checking for sensitive files..."
+
+# Check if .env file is being committed
+if git diff --cached --name-only | grep -q "\.env$"; then
+    echo "❌ ERROR: Attempting to commit .env file!"
+    echo "Please remove .env from staging: git reset HEAD .env"
+    exit 1
+fi
+
+# Check for hardcoded API keys or secrets in staged files
+if git diff --cached | grep -iE "(AIza[0-9A-Za-z_-]{35}|npg_[a-zA-Z0-9]+|MTQ[0-9A-Za-z._-]+)" | grep -v ".env.example" > /dev/null; then
+    echo "❌ ERROR: Hardcoded API keys or tokens detected!"
+    echo "Please remove sensitive credentials from your code."
+    exit 1
+fi
+
+# Run TypeScript compilation check
+echo "🔍 Checking TypeScript compilation..."
+npm run build > /dev/null 2>&1 || {
+    echo "❌ TypeScript compilation failed!"
+    npm run build
+    exit 1
+}
+
+# Run security audit (non-blocking, just warning)
+echo "🔒 Running security audit..."
+npm audit --audit-level=moderate || {
+    echo "⚠️  Security vulnerabilities found. Consider running 'npm audit fix'"
+}
+
+# Run lint-staged for staged files
+echo "✨ Formatting and linting staged files..."
+npx lint-staged || exit 1
+
+echo "✅ Pre-commit checks passed!"
