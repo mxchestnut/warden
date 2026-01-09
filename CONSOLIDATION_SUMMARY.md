@@ -19,10 +19,7 @@ Successfully consolidated and updated the My1EParty bot to **Warden** with all t
 **Result:** All features (prompts, lore, memories, knowledge base, etc.) are now available to all authenticated users.
 
 ### 2. **Database Configuration**
-- ✅ Updated `.env` with Neon PostgreSQL connection string:
-  ```
-  DATABASE_URL=postgresql://neondb_owner:npg_pO9u7TaURVAL@ep-rapid-silence-a-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-  ```
+- ✅ Updated `.env` with Neon PostgreSQL connection string (stored securely in .env, not in repository)
 - ✅ Removed Stripe-related fields from user schema:
   - Removed `subscriptionTier`
   - Removed `stripeCustomerId`
@@ -69,9 +66,9 @@ Created/updated `.env` file with:
 # Warden Bot Configuration
 NODE_ENV=development
 PORT=3000
-DATABASE_URL=postgresql://neondb_owner:npg_pO9u7TaURVAL@...
-SESSION_SECRET=warden-super-secret-change-this-in-production-2024
-WARDEN_BOT_TOKEN=MTQ1OTExODkwMDk1NTU3ODQxOA.GatAZj...
+DATABASE_URL=postgresql://user:password@host/database
+SESSION_SECRET=your-session-secret-here
+WARDEN_BOT_TOKEN=your-discord-bot-token-here
 GEMINI_API_KEY=your-gemini-api-key-here
 AWS_S3_BUCKET=warden-documents
 USE_REDIS=false

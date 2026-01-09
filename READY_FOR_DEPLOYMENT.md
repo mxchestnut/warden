@@ -48,10 +48,10 @@ All code has been successfully updated, consolidated, and tested. The bot is now
 ```env
 NODE_ENV=development
 PORT=3000
-DATABASE_URL=postgresql://neondb_owner:npg_pO9u7TaURVAL@...
-SESSION_SECRET=warden-super-secret-change-this-in-production-2024
-WARDEN_BOT_TOKEN=MTQ1OTExODkwMDk1NTU3ODQxOA.GatAZj...
-GEMINI_API_KEY=your-gemini-api-key-here (⚠️ NEEDS TO BE ADDED)
+DATABASE_URL=postgresql://user:password@host/database
+SESSION_SECRET=your-session-secret-here
+WARDEN_BOT_TOKEN=your-discord-bot-token-here
+GEMINI_API_KEY=your-gemini-api-key-here
 AWS_S3_BUCKET=warden-documents
 USE_REDIS=false
 ```
