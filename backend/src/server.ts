@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load .env from project root FIRST, before any other imports that use env vars
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Use process.cwd() which points to backend/ directory, so ../.env gets the root .env
+dotenv.config({ path: path.join(process.cwd(), '../.env') });
 
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';

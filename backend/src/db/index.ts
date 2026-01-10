@@ -1,12 +1,17 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env before creating the pool
+dotenv.config({ path: path.join(process.cwd(), '../.env') });
 
 // For development, initialize immediately from .env
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? {
-    rejectUnauthorized: false // Allow AWS RDS certificates
+  ssl: process.env.DATABASE_URL?.includes('neon.tech') || process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false // Allow Neon/AWS certificates
   } : undefined
 });
 
