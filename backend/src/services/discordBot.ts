@@ -9,23 +9,23 @@ import node_crypto from 'node:crypto';
 import axios from 'axios';
 import { getUserTierFromDiscord } from '../middleware/tier.js';
 
-// Write Pretend - Discord bot with Stripe-based premium features
+// Warden - Discord bot for Pathfinder 1E campaigns
 
 // Global guards to persist across module reloads
 declare global {
   // Bot client
-  var __WRITE_PRETEND_CLIENT__: Client | null | undefined;
+  var __WARDEN_CLIENT__: Client | null | undefined;
   // Init flag
-  var __WRITE_PRETEND_INIT__: boolean | undefined;
+  var __WARDEN_INIT__: boolean | undefined;
   // Message dedupe set
   var __PROCESSED_MESSAGE_IDS__: Set<string> | undefined;
 }
 
-let botClient: Client | null = global.__WRITE_PRETEND_CLIENT__ ?? null;
+let botClient: Client | null = global.__WARDEN_CLIENT__ ?? null;
 const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
 
 // Track initialization to prevent duplicates (persisted globally)
-let botInitialized = global.__WRITE_PRETEND_INIT__ ?? false;
+let botInitialized = global.__WARDEN_INIT__ ?? false;
 
 // Normalize string by removing accents and converting to lowercase
 function normalizeString(str: string): string {
@@ -44,12 +44,12 @@ function isAdmin(message: Message): boolean {
 
 export function initializeDiscordBot(token: string) {
   // Prevent duplicate initialization with a strong guard
-  if (global.__WRITE_PRETEND_INIT__) {
-    return global.__WRITE_PRETEND_CLIENT__ ?? botClient;
+  if (global.__WARDEN_INIT__) {
+    return global.__WARDEN_CLIENT__ ?? botClient;
   }
 
   botInitialized = true;
-  global.__WRITE_PRETEND_INIT__ = true;
+  global.__WARDEN_INIT__ = true;
 
   if (!token) {
     console.log(`No Discord bot token provided, skipping bot initialization`);
@@ -74,10 +74,10 @@ export function initializeDiscordBot(token: string) {
 
   // Store the client globally
   botClient = client;
-  global.__WRITE_PRETEND_CLIENT__ = client;
+  global.__WARDEN_CLIENT__ = client;
 
   client.on('ready', () => {
-    console.log(`Write Pretend bot logged in as ${client?.user?.tag}`);
+    console.log(`Warden bot logged in as ${client?.user?.tag}`);
 
     // Start prompt scheduler for RP tier feature
     import('./promptScheduler.js').then(({ startPromptScheduler }) => {
@@ -163,7 +163,7 @@ export function initializeDiscordBot(token: string) {
   });
 
   botClient.login(token).catch(error => {
-    console.error('Failed to login Write Pretend Discord bot:', error);
+    console.error('Failed to login Warden Discord bot:', error);
   });
 }
 
@@ -379,7 +379,7 @@ async function checkRpTier(message: Message): Promise<boolean> {
       `• Character memories\n` +
       `• World building lore (!lore, !set)\n` +
       `• Daily prompt scheduling\n\n` +
-      `Upgrade at https://my1e.party/settings`
+      `Upgrade at https://warden.my/settings`
     );
     return false;
   }
@@ -492,7 +492,7 @@ async function handleProfile(message: Message, args: string[]) {
     await message.reply('❌ **Discord account not linked to My1e Party.**\n\n' +
       '**To link your account:**\n' +
       '1. Use `!connect <username> <password>` in Discord, OR\n' +
-      '2. Visit my1e.party to create/manage your account');
+      '2. Visit warden.my to create/manage your account');
     return;
   }
 
@@ -819,7 +819,7 @@ async function handleProfile(message: Message, args: string[]) {
     if (character.avatarUrl) {
       const avatarUrl = character.avatarUrl.startsWith('http')
         ? character.avatarUrl
-        : `https://my1e.party${character.avatarUrl}`;
+        : `https://warden.my${character.avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
 
@@ -1291,7 +1291,7 @@ async function handleConnect(message: Message, args: string[]) {
       '• Use all your characters in Discord\n' +
       '• Roll dice with your character stats\n' +
       '• Proxy messages as your characters\n\n' +
-      '💡 Don\'t have an account? Create one at https://my1e.party');
+      '💡 Don\'t have an account? Create one at https://warden.my');
     return;
   }
 
@@ -1300,7 +1300,7 @@ async function handleConnect(message: Message, args: string[]) {
 
   try {
     // Send a DM to the user for privacy
-    await message.author.send('🔐 Connecting to my1e.party...');
+    await message.author.send('🔐 Connecting to warden.my...');
 
     // Authenticate with backend
     const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -1339,7 +1339,7 @@ async function handleConnect(message: Message, args: string[]) {
     await message.author.send('❌ **Failed to connect.**\n\n' +
       `Error: ${errorMsg}\n\n` +
       'Please check your username and password and try again.\n\n' +
-      '💡 Need help? Visit https://my1e.party to manage your account.');
+      '💡 Need help? Visit https://warden.my to manage your account.');
   }
 }
 
@@ -1356,7 +1356,7 @@ async function handleSyncAll(message: Message) {
       await message.reply('❌ **Discord account not linked.**\n\n' +
         '**To link your account:**\n' +
         '1. Use `!connect <username> <password>` in Discord, OR\n' +
-        '2. Visit my1e.party to create/manage your account\n\n' +
+        '2. Visit warden.my to create/manage your account\n\n' +
         '💡 Once linked, all your characters will be available!');
       return;
     }
@@ -1369,7 +1369,7 @@ async function handleSyncAll(message: Message) {
     if (characters.length === 0) {
       await message.reply('ℹ️ **No characters found in your account.**\n\n' +
         '**Create characters:**\n' +
-        '• Visit https://my1e.party and create a character manually\n' +
+        '• Visit https://warden.my and create a character manually\n' +
         (user.pathCompanionUsername ? '• Or import from PathCompanion in the web portal\n' : '') +
         '\n💡 Characters you create will automatically be available in Discord!');
       return;
@@ -1383,7 +1383,7 @@ async function handleSyncAll(message: Message) {
     ).join('\n');
 
     const moreText = characters.length > MAX_CHARS_TO_SHOW
-      ? `\n\n...and ${characters.length - MAX_CHARS_TO_SHOW} more! View all at https://my1e.party`
+      ? `\n\n...and ${characters.length - MAX_CHARS_TO_SHOW} more! View all at https://warden.my`
       : '';
 
     await message.reply(`✅ **Synced ${characters.length} character${characters.length !== 1 ? 's' : ''}!**\n\n` +
@@ -1433,7 +1433,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
     if (!character.isPathCompanion || !character.pathCompanionId) {
       await message.reply(`❌ **${character.name} is not linked to PathCompanion.**\n\n` +
         'To link this character:\n' +
-        '1. Visit https://my1e.party\n' +
+        '1. Visit https://warden.my\n' +
         '2. Open the character sheet\n' +
         '3. Click the Link icon to connect to PathCompanion');
       return;
@@ -1468,7 +1468,7 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
       console.error('Failed to sync PathCompanion character:', apiError);
       const errorMsg = apiError.response?.data?.error || 'Failed to sync character data.';
       await message.reply(`❌ **Update failed:** ${errorMsg}\n\n` +
-        'Try reconnecting to PathCompanion at https://my1e.party');
+        'Try reconnecting to PathCompanion at https://warden.my');
     }
 
   } catch (error) {
@@ -1490,10 +1490,10 @@ async function handleHelp(message: Message, botType: 'free' | 'premium' | 'unifi
         { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards', inline: false },
         { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
         { name: '🛠️ GM Tools', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion', inline: false },
-        { name: '⭐ RP Tier Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at my1e.party*', inline: false },
+        { name: '⭐ RP Tier Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at warden.my*', inline: false },
         { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel', inline: false }
       )
-      .setFooter({ text: 'Visit my1e.party to manage characters and upgrade to RP tier!' });
+      .setFooter({ text: 'Visit warden.my to manage characters and upgrade to RP tier!' });
 
     await message.reply({ embeds: [embed] });
   }
@@ -1826,7 +1826,7 @@ export async function sendRollToDiscord(characterId: number, rollData: any) {
           .setColor(embedColor)
           .setTitle(`🎲 ${character.name} - ${rollData.rollDescription}`)
           .setDescription(`**${rollData.diceRoll}** ${rollData.modifier >= 0 ? '+' : ''}${rollData.modifier} = **${rollData.total}**`)
-          .setFooter({ text: 'Rolled from my1e.party' })
+          .setFooter({ text: 'Rolled from warden.my' })
           .setTimestamp();
 
         if (rollData.diceRoll === 20) {
@@ -2310,7 +2310,7 @@ async function handleStats(message: Message, args: string[]) {
     if (character[0].avatarUrl) {
       const avatarUrl = character[0].avatarUrl.startsWith('http')
         ? character[0].avatarUrl
-        : `https://my1e.party${character[0].avatarUrl}`;
+        : `https://warden.my${character[0].avatarUrl}`;
       embed.setThumbnail(avatarUrl);
     }
 
