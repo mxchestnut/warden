@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Black Owl -->
+  <!-- Head -->
+  <circle cx="128" cy="110" r="65" fill="#000000"/>
+  
+  <!-- Eyes -->
+  <circle cx="105" cy="95" r="16" fill="#ffffff"/>
+  <circle cx="151" cy="95" r="16" fill="#ffffff"/>
+  <circle cx="107" cy="97" r="10" fill="#000000"/>
+  <circle cx="153" cy="97" r="10" fill="#000000"/>
+  <circle cx="108" cy="95" r="4" fill="#ffffff"/>
+  <circle cx="154" cy="95" r="4" fill="#ffffff"/>
+  
+  <!-- Beak -->
+  <polygon points="128,115 120,125 136,125" fill="#ff8c00"/>
+  
+  <!-- Left Wing -->
+  <ellipse cx="75" cy="120" rx="20" ry="45" fill="#000000" transform="rotate(-25 75 120)"/>
+  
+  <!-- Right Wing -->
+  <ellipse cx="181" cy="120" rx="20" ry="45" fill="#000000" transform="rotate(25 181 120)"/>
+  
+  <!-- Body -->
+  <ellipse cx="128" cy="150" rx="50" ry="55" fill="#1a1a1a"/>
+  
+  <!-- Left Foot -->
+  <line x1="110" y1="200" x2="105" y2="230" stroke="#ff8c00" stroke-width="3"/>
+  <line x1="105" y1="230" x2="95" y2="230" stroke="#ff8c00" stroke-width="3"/>
+  <line x1="105" y1="230" x2="115" y2="230" stroke="#ff8c00" stroke-width="3"/>
+  
+  <!-- Right Foot -->
+  <line x1="146" y1="200" x2="151" y2="230" stroke="#ff8c00" stroke-width="3"/>
+  <line x1="151" y1="230" x2="141" y2="230" stroke="#ff8c00" stroke-width="3"/>
+  <line x1="151" y1="230" x2="161" y2="230" stroke="#ff8c00" stroke-width="3"/>
+</svg>
