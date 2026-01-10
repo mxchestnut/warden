@@ -20,6 +20,7 @@ import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
+import studioRoutes from './routes/studio';
 import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
@@ -233,6 +234,7 @@ app.get('/api/csrf-token', (req, res) => {
 // Auth routes handle their own CSRF for better UX
 // Discord routes are called by the bot, which can't send CSRF tokens
 app.use('/api/documents', doubleCsrfProtection);
+app.use('/api/studio', doubleCsrfProtection);
 app.use('/api/characters', doubleCsrfProtection);
 app.use('/api/pathcompanion', doubleCsrfProtection);
 app.use('/api/system', doubleCsrfProtection);
@@ -248,6 +250,7 @@ app.use('/api/lore', doubleCsrfProtection);
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/studio', studioRoutes);
 app.use('/api/characters', characterRoutes);
 app.use('/api/pathcompanion', pathcompanionRoutes);
 app.use('/api/discord', discordRoutes);
