@@ -1281,7 +1281,7 @@ function generateDiscordMarkdown(character: any): string {
   // Public profile link (if public)
   if (character.isPublic && character.publicSlug) {
     lines.push('---');
-    lines.push(`*View full profile: ${process.env.FRONTEND_URL || 'https://murder-tech.com'}/public/${character.publicSlug}*`);
+    lines.push(`*View full profile: ${process.env.FRONTEND_URL || 'https://warden.my'}/public/${character.publicSlug}*`);
   }
 
   return lines.join('\n');

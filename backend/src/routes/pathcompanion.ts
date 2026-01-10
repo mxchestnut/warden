@@ -69,7 +69,7 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
   }
 }
 
-// Login endpoint doesn't require Murder Tech auth
+// Login endpoint doesn't require Warden auth
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -191,7 +191,7 @@ router.post('/character/share', async (req, res) => {
  * Import a PathCompanion character
  * POST /api/pathcompanion/import
  * Body: { characterId, mergeWithId? } - uses stored PathCompanion session
- * Requires Murder Tech authentication AND PathCompanion account connection
+ * Requires Warden authentication AND PathCompanion account connection
  */
 router.post('/import', isAuthenticated, async (req, res) => {
   try {
@@ -411,7 +411,7 @@ router.post('/import', isAuthenticated, async (req, res) => {
 /**
  * Import all PathCompanion characters
  * POST /api/pathcompanion/import-all
- * Requires Murder Tech authentication AND PathCompanion account connection
+ * Requires Warden authentication AND PathCompanion account connection
  */
 router.post('/import-all', isAuthenticated, async (req, res) => {
   try {
@@ -648,7 +648,7 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
         alignment: basicInfo.alignment,
         deity: basicInfo.deity,
         size: basicInfo.size,
-        // Only update avatar if Murder.tech doesn't have a custom one
+        // Only update avatar if Warden doesn't have a custom one
         ...(sheet.avatarUrl ? {} : { avatarUrl: basicInfo.avatarUrl }),
         currentHp: combatStats.currentHp,
         maxHp: combatStats.maxHp,
@@ -674,7 +674,7 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
         lastSynced: new Date(),
         updatedAt: new Date()
         // NOTE: bio, personality, backstory, appearance, etc. are NOT updated
-        // This preserves Murder.tech-specific character development
+        // This preserves Warden-specific character development
       })
       .where(eq(characterSheets.id, sheetId))
       .returning();
@@ -710,7 +710,7 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
 /**
  * Import all characters from PathCompanion account
  * POST /api/pathcompanion/import-all
- * Requires Murder Tech authentication AND PathCompanion account connection
+ * Requires Warden authentication AND PathCompanion account connection
  */
 router.post('/import-all', isAuthenticated, async (req, res) => {
   try {
@@ -885,7 +885,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
 });
 
 /**
- * Link an existing Murder.tech character to PathCompanion using a character key
+ * Link an existing Warden character to PathCompanion using a character key
  * POST /api/pathcompanion/link/:id
  * Body: { characterKey }
  */

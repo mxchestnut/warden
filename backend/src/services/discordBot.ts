@@ -1324,7 +1324,7 @@ async function handleConnect(message: Message, args: string[]) {
       '• Type `CharName: message` to proxy as that character\n' +
       '• Use `!help` for more commands');
 
-    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Murder user: ${username}`);
+    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Warden user: ${username}`);
 
   } catch (error: any) {
     console.error('Discord connect error:', error);

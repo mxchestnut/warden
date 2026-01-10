@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 const router = Router();
 
-// Discord bot authentication - validates Murder credentials and returns user data
+// Discord bot authentication - validates Warden credentials and returns user data
 router.post('/login', async (req, res) => {
   try {
     const { username, password, discordUserId } = req.body;
@@ -45,7 +45,7 @@ router.post('/login', async (req, res) => {
         });
       }
 
-      // Link this Discord user to the Murder account
+      // Link this Discord user to the Warden account
       await db.update(users)
         .set({ discordUserId })
         .where(eq(users.id, user.id));
