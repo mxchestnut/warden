@@ -14,6 +14,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import { doubleCsrf } from 'csrf-csrf';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
@@ -116,6 +117,17 @@ async function startServer() {
 
   // Trust proxy (nginx)
   app.set('trust proxy', 1);
+
+// Compression middleware (should be early in the chain)
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6 // Balance between compression and CPU usage
+}));
 
 // Security middleware
 app.use(helmet({
