@@ -2,6 +2,8 @@
 
 **Warden** is a comprehensive platform combining Discord bot integration for Pathfinder 1E campaigns with social writing and collaboration features. It features character management, collaborative writing groups, rich text editing with TipTap, and advanced campaign tools - all integrated with PathCompanion.com.
 
+🚀 **Now with automated deployment via GitHub Actions!**
+
 ## Features
 
 ### Core Features (Available to All)
