@@ -8,6 +8,13 @@
       "when": 1766327577728,
       "tag": "0000_uneven_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768052458171,
+      "tag": "0001_add_social_features",
+      "breakpoints": true
     }
   ]
 }

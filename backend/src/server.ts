@@ -34,6 +34,9 @@ import memoriesRoutes from './routes/memories';
 import publicRoutes from './routes/public';
 import promptsRoutes from './routes/prompts';
 import loreRoutes from './routes/lore';
+import groupsRoutes from './routes/groups';
+import commentsRoutes from './routes/comments';
+import collaborationRoutes from './routes/collaboration';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -246,6 +249,9 @@ app.use('/api/hall-of-fame', doubleCsrfProtection);
 app.use('/api/memories', doubleCsrfProtection);
 app.use('/api/prompts', doubleCsrfProtection);
 app.use('/api/lore', doubleCsrfProtection);
+app.use('/api/groups', doubleCsrfProtection);
+app.use('/api/comments', doubleCsrfProtection);
+app.use('/api/collaboration', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -264,6 +270,9 @@ app.use('/api/memories', memoriesRoutes);
 app.use('/api/public', publicRoutes); // No auth required for public profiles
 app.use('/api/prompts', promptsRoutes);
 app.use('/api/lore', loreRoutes);
+app.use('/api/groups', groupsRoutes);
+app.use('/api/comments', commentsRoutes);
+app.use('/api/collaboration', collaborationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -271,7 +280,7 @@ app.get('/health', (req, res) => {
 });
 
 // Serve static frontend files
-const frontendPath = path.join(__dirname, '../../frontend/dist');
+const frontendPath = path.join(__dirname, '../../frontend');
 app.use(express.static(frontendPath));
 
 // Serve index.html for all non-API routes (SPA support)

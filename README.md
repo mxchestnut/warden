@@ -1,6 +1,6 @@
-# Warden - Discord Pathfinder Companion Bot
+# Warden - Social Writing & Roleplay Platform
 
-**Warden** is a comprehensive Discord bot for Pathfinder 1E campaigns, integrated with PathCompanion.com. It features character proxying, dice rolling, AI-powered knowledge base, world-building tools, and advanced campaign management features.
+**Warden** is a comprehensive platform combining Discord bot integration for Pathfinder 1E campaigns with social writing and collaboration features. It features character management, collaborative writing groups, rich text editing with TipTap, and advanced campaign tools - all integrated with PathCompanion.com.
 
 ## Features
 
@@ -12,6 +12,7 @@
 - Character avatar upload for Discord proxying
 - Export and share character sheets
 - Character statistics tracking
+- Character memories and relationship tracking
 
 **Discord Bot Commands**
 - **Character Proxying** - Speak as your character with custom avatars
@@ -26,17 +27,30 @@
 - **Smart Learning** - Add URLs, documents, or manual entries to knowledge base
 - **Feat & Spell Lookups** - Instant Pathfinder rules information
 
+**Social & Collaboration Features** *(New from work-shelf integration)*
+- **Writing Groups** - Create public/private groups for collaborative writing and RP
+- **Group Discussions** - Threaded posts and conversations within groups
+- **Collaborative Editing** - Share documents with editing/commenting permissions
+- **Rich Text Editor** - TipTap-powered WYSIWYG editor with full formatting
+- **Document Comments** - Inline and threaded comments on documents
+- **Version History** - Track all changes and versions of documents
+- **User Following** - Follow other writers and stay updated on their work
+- **Notifications** - Get notified of comments, mentions, and group activity
+
 **Advanced Systems**
 - **Character Memories** - Track important character moments and development
 - **Character Relationships** - Define and track relationships between characters
 - **World Building Lore** - Tag-based lore system with cross-channel posting
 - **Prompts & Tropes** - Generate creative prompts and writing inspiration
+- **Studio Workspace** - Dedicated writing workspace for focused creation
+- **Document Organization** - Folders, tags, and categorization
 
 **Web Portal**
 - Secure authentication
-- Rich text document editor
+- Rich text document editor with TipTap
 - Character sheet management
 - Statistics dashboard and leaderboards
+- Groups and collaboration management
 - Campaign management tools
 
 ---
@@ -45,7 +59,7 @@
 
 ### Backend
 - **Runtime:** Node.js, Express, TypeScript
-- **Database:** PostgreSQL (Neon)
+- **Database:** PostgreSQL (Neon) with Drizzle ORM
 - **Authentication:** Passport.js
 - **Session Store:** Redis (optional) or in-memory
 - **Discord:** Discord.js v14
@@ -54,10 +68,11 @@
 - **Security:** Helmet, CSRF protection, rate limiting
 
 ### Frontend
-- **Framework:** React + TypeScript
+- **Framework:** React 19 + TypeScript
 - **Build Tool:** Vite
 - **UI:** Custom components
-- **Editor:** Tiptap 3.0 (rich text)
+- **Editor:** TipTap 3.0 (rich text collaborative editing)
+- **Styling:** CSS Modules
 
 ### Infrastructure
 - **Database:** Neon PostgreSQL

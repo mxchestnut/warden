@@ -483,3 +483,235 @@ export const characterMemoriesRelations = relations(characterMemories, ({ one })
     references: [characterSheets.id]
   })
 }));
+
+// ===== SOCIAL FEATURES (from work-shelf integration) =====
+
+// Groups - Writing/RP groups for collaboration
+export const groups = pgTable('groups', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  avatarUrl: text('avatar_url'),
+  bannerUrl: text('banner_url'),
+  isPublic: boolean('is_public').default(true).notNull(),
+  tags: text('tags'), // JSON array of string tags
+  rules: text('rules'),
+  memberCount: integer('member_count').default(0),
+  discordGuildId: text('discord_guild_id'), // Optional Discord server link
+  matrixRoomId: text('matrix_room_id'), // Optional Matrix room for chat
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Group Members
+export const groupMembers = pgTable('group_members', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('member'), // 'owner', 'moderator', 'member'
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at')
+}, (table) => ({
+  uniqueGroupUser: unique().on(table.groupId, table.userId)
+}));
+
+// Group Posts - Discussion threads within groups
+export const groupPosts = pgTable('group_posts', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  contentHtml: text('content_html'), // Rendered from TipTap
+  isPinned: boolean('is_pinned').default(false),
+  isLocked: boolean('is_locked').default(false),
+  replyCount: integer('reply_count').default(0),
+  likeCount: integer('like_count').default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Group Post Replies
+export const groupPostReplies = pgTable('group_post_replies', {
+  id: serial('id').primaryKey(),
+  postId: integer('post_id').notNull().references(() => groupPosts.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  contentHtml: text('content_html'),
+  parentReplyId: integer('parent_reply_id'), // Will be self-referencing
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}) as any;
+
+// Document Collaborators - Who can edit/view specific documents
+export const documentCollaborators = pgTable('document_collaborators', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('viewer'), // 'owner', 'editor', 'commenter', 'viewer'
+  canEdit: boolean('can_edit').default(false),
+  canComment: boolean('can_comment').default(true),
+  invitedBy: integer('invited_by').references(() => users.id),
+  invitedAt: timestamp('invited_at').defaultNow().notNull()
+}, (table) => ({
+  uniqueDocUser: unique().on(table.documentId, table.userId)
+}));
+
+// Comments on Documents (inline and general)
+export const comments = pgTable('comments', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  contentHtml: text('content_html'),
+  parentId: integer('parent_id'), // Will be self-referencing
+  // For inline comments on specific text
+  anchor: text('anchor'), // JSON: {start, end, text}
+  isResolved: boolean('is_resolved').default(false),
+  isEdited: boolean('is_edited').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+}) as any;
+
+// Comment Reactions
+export const commentReactions = pgTable('comment_reactions', {
+  id: serial('id').primaryKey(),
+  commentId: integer('comment_id').notNull().references(() => comments.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reactionType: text('reaction_type').notNull(), // 'like', 'love', 'laugh', 'helpful'
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  uniqueCommentUserReaction: unique().on(table.commentId, table.userId, table.reactionType)
+}));
+
+// Document Versions - Full version history for collaborative editing
+export const documentVersions = pgTable('document_versions', {
+  id: serial('id').primaryKey(),
+  documentId: integer('document_id').notNull().references(() => documents.id, { onDelete: 'cascade' }),
+  version: integer('version').notNull(),
+  content: text('content').notNull(),
+  contentHtml: text('content_html'),
+  title: text('title').notNull(),
+  changeSummary: text('change_summary'),
+  createdBy: integer('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// User Follows - Social following
+export const userFollows = pgTable('user_follows', {
+  id: serial('id').primaryKey(),
+  followerId: integer('follower_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  followingId: integer('following_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => ({
+  uniqueFollow: unique().on(table.followerId, table.followingId)
+}));
+
+// Notifications
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'comment', 'mention', 'follow', 'group_invite', 'collaboration'
+  title: text('title').notNull(),
+  message: text('message'),
+  linkUrl: text('link_url'),
+  metadata: text('metadata'), // JSON
+  isRead: boolean('is_read').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+// Group Invitations
+export const groupInvitations = pgTable('group_invitations', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  inviterId: integer('inviter_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  inviteeId: integer('invitee_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'declined'
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  respondedAt: timestamp('responded_at')
+}, (table) => ({
+  uniqueGroupInvite: unique().on(table.groupId, table.inviteeId)
+}));
+
+// Relations for social features
+export const groupsRelations = relations(groups, ({ many }) => ({
+  members: many(groupMembers),
+  posts: many(groupPosts),
+  invitations: many(groupInvitations)
+}));
+
+export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupMembers.groupId],
+    references: [groups.id]
+  }),
+  user: one(users, {
+    fields: [groupMembers.userId],
+    references: [users.id]
+  })
+}));
+
+export const groupPostsRelations = relations(groupPosts, ({ one, many }) => ({
+  group: one(groups, {
+    fields: [groupPosts.groupId],
+    references: [groups.id]
+  }),
+  user: one(users, {
+    fields: [groupPosts.userId],
+    references: [users.id]
+  }),
+  replies: many(groupPostReplies)
+}));
+
+export const groupPostRepliesRelations = relations(groupPostReplies, ({ one, many }) => ({
+  post: one(groupPosts, {
+    fields: [groupPostReplies.postId],
+    references: [groupPosts.id]
+  }),
+  user: one(users, {
+    fields: [groupPostReplies.userId],
+    references: [users.id]
+  }),
+  parentReply: one(groupPostReplies, {
+    fields: [groupPostReplies.parentReplyId],
+    references: [groupPostReplies.id]
+  }),
+  childReplies: many(groupPostReplies)
+}));
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  document: one(documents, {
+    fields: [comments.documentId],
+    references: [documents.id]
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id]
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id]
+  }),
+  replies: many(comments),
+  reactions: many(commentReactions)
+}));
+
+export const commentReactionsRelations = relations(commentReactions, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentReactions.commentId],
+    references: [comments.id]
+  }),
+  user: one(users, {
+    fields: [commentReactions.userId],
+    references: [users.id]
+  })
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  })
+}));

@@ -1,10 +1,8 @@
 {
-  "id": "bfc5f7d0-f7fb-4a6a-a236-defb11d90864",
-  "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "character_sheets": {
+    "public.character_sheets": {
       "name": "character_sheets",
       "schema": "",
       "columns": {
@@ -132,21 +130,24 @@
         "character_sheets_user_id_users_id_fk": {
           "name": "character_sheets_user_id_users_id_fk",
           "tableFrom": "character_sheets",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "documents": {
+    "public.documents": {
       "name": "documents",
       "schema": "",
       "columns": {
@@ -225,21 +226,24 @@
         "documents_user_id_users_id_fk": {
           "name": "documents_user_id_users_id_fk",
           "tableFrom": "documents",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "shared_documents": {
+    "public.shared_documents": {
       "name": "shared_documents",
       "schema": "",
       "columns": {
@@ -281,34 +285,37 @@
         "shared_documents_document_id_documents_id_fk": {
           "name": "shared_documents_document_id_documents_id_fk",
           "tableFrom": "shared_documents",
-          "tableTo": "documents",
           "columnsFrom": [
             "document_id"
           ],
+          "tableTo": "documents",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "shared_documents_user_id_users_id_fk": {
           "name": "shared_documents_user_id_users_id_fk",
           "tableFrom": "shared_documents",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "users": {
+    "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
@@ -374,19 +381,28 @@
       "uniqueConstraints": {
         "users_username_unique": {
           "name": "users_username_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "username"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     }
   },
   "enums": {},
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "bfc5f7d0-f7fb-4a6a-a236-defb11d90864",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "sequences": {},
+  "policies": {},
+  "views": {},
+  "roles": {}
 }
