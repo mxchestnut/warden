@@ -5,7 +5,7 @@ import { ToastContainer } from './components/ui/Toast';
 import { ChatManager } from './features/chat/ChatManager';
 import { ChatLauncher } from './features/chat/ChatLauncher';
 import { ChatBar } from './features/chat/ChatBar';
-import { useAuth } from './features/auth/useAuth';
+import { useAuth, AuthProvider } from './features/auth/useAuth';
 import './App.css';
 
 // Loading component
@@ -65,7 +65,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 
 function AppWithRouter() {
   return (
-    <>
+    <AuthProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public routes */}
@@ -131,7 +131,7 @@ function AppWithRouter() {
       <ChatManager />
       <ChatLauncher />
       <ChatBar />
-    </>
+    </AuthProvider>
   );
 }
 
