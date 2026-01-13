@@ -145,17 +145,20 @@ app.use(helmet({
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
-      upgradeInsecureRequests: null, // Disable HTTPS upgrade for HTTP access
     },
   },
-  // Disable HSTS for HTTP access (no SSL certificate on EC2)
-  hsts: false,
+  // Enable HSTS - we have SSL via Nginx
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
   noSniff: true,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
   origin: isProduction
-    ? ['https://warden.my', 'https://www.warden.my', 'http://54.235.52.122:3000', 'http://54.235.52.122']
+    ? ['https://warden.my', 'https://www.warden.my']
     : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
