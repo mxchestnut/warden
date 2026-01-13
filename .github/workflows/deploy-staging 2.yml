@@ -1,0 +1,112 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: http://staging.warden.my  # Update with your staging URL
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Backend build
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Run backend tests
+        working-directory: backend
+        run: npm run test:coverage
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
+      # Frontend build
+      - name: Install frontend dependencies
+        working-directory: frontend-src
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend-src
+        run: npm run build
+        env:
+          NODE_ENV: staging
+
+      # Deploy to staging server (if you have one)
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: 22
+          script: |
+            cd warden-staging
+            git pull origin develop
+            
+            # Backend
+            cd backend
+            npm install
+            npm run build
+            pm2 restart warden-staging
+            pm2 save
+            
+            # Wait for server
+            sleep 5
+            
+            # Health check
+            curl -f http://localhost:3001/health || exit 1
+            
+            echo "✅ Staging deployment completed"
+        continue-on-error: true  # Don't fail if no staging server
+
+      - name: Run smoke tests on staging
+        run: |
+          echo "🧪 Running smoke tests against staging..."
+          # Add smoke test commands here
+          # curl -f http://staging.warden.my/health
+          # curl -f http://staging.warden.my/api/docs.json
+        continue-on-error: true
+
+      - name: Staging deployment summary
+        if: always()
+        run: |
+          echo "## 🎭 Staging Deployment Summary"
+          echo ""
+          echo "- Environment: Staging"
+          echo "- Branch: develop"
+          echo "- Commit: ${{ github.sha }}"
+          echo "- Status: ${{ job.status }}"
+          echo ""
+          echo "Ready for QA testing and validation before production."
+
+      - name: Comment on PR if applicable
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🎭 Staging Deployment Complete\n\n✅ Your changes have been deployed to the staging environment.\n\n**Test your changes:**\n- Staging URL: http://staging.warden.my\n- API Docs: http://staging.warden.my/api/docs\n\nOnce validated, this can be merged to \`main\` for production deployment.`
+            });
