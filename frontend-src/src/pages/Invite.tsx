@@ -84,7 +84,7 @@ export function Invite() {
         localStorage.setItem('invitation_email', data.email)
         // Redirect to login/signup after a brief delay
         setTimeout(() => {
-          authService.login()
+          window.location.href = '/login'
         }, 2000)
       } else {
         setStatus('invalid')
@@ -189,7 +189,7 @@ export function Invite() {
                   Please sign in to accept this invitation
                 </p>
                 <button
-                  onClick={() => authService.login()}
+                  onClick={() => window.location.href = '/login'}
                   className="w-full px-6 py-3 rounded-lg font-semibold text-white hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: '#B34B0C' }}
                 >
@@ -207,7 +207,7 @@ export function Invite() {
                 <button
                   onClick={async () => {
                     await authService.logout()
-                    authService.login()
+                    window.location.href = '/login'
                   }}
                   className="w-full px-6 py-3 rounded-lg font-semibold text-white hover:opacity-90 transition-opacity"
                   style={{ backgroundColor: '#B34B0C' }}

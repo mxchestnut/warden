@@ -54,9 +54,10 @@ export function AuthCallback() {
       console.log('[AuthCallback] Processing authorization code...')
 
       try {
-        const user = await authService.handleCallback(code)
+        // OAuth callback - user should already be authenticated via cookie
+        const user = await authService.getCurrentUser()
         
-        console.log('[AuthCallback] Successfully authenticated user:', user.email)
+        console.log('[AuthCallback] Successfully authenticated user:', user?.email)
         
         // Clean up the processed code marker (optional, but keeps sessionStorage clean)
         const processedCodeKey = `oauth_code_${code}`

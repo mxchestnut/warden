@@ -41,7 +41,11 @@ export function ProfileSettings() {
       setLoading(true)
       const currentUser = await authService.getCurrentUser()
       if (currentUser) {
-        setUser(currentUser)
+        setUser({
+          ...currentUser,
+          pathCompanionConnected: !!currentUser.pathcompanionUsername,
+          pathCompanionUsername: currentUser.pathcompanionUsername || ''
+        })
       }
     } catch (err) {
       console.error('Failed to load user:', err)
@@ -164,7 +168,7 @@ export function ProfileSettings() {
   if (loading) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#37322E' }}>
-        <Navigation />
+        <Navigation user={user} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <p style={{ color: 'white' }}>Loading...</p>
         </div>
@@ -174,7 +178,7 @@ export function ProfileSettings() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#37322E' }}>
-      <Navigation />
+      <Navigation user={user} />
       <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>

@@ -3,6 +3,11 @@ import { Navigation } from '../components/Navigation'
 import { authService } from '../services/auth'
 
 export default function PendingApproval() {
+  const handleLogout = async () => {
+    await authService.logout()
+    window.location.href = '/login'
+  }
+  
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#37322E' }}>
       <Navigation user={null} />

@@ -24,12 +24,14 @@ export const useAuth = () => {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const result = await authService.login(username, password);
-    if (result.success) {
+    try {
+      const user = await authService.login(username, password);
       setIsAuthenticated(true);
-      setUser(result.user);
+      setUser(user);
+      return user;
+    } catch (error) {
+      throw error;
     }
-    return result;
   };
 
   const logout = async () => {
