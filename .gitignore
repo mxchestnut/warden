@@ -63,3 +63,7 @@ secrets.json
 
 # S3 uploads
 uploads/
+
+# Unused routes (archived for future Discord bot features)
+backend/src/routes/_unused/
+frontend-src/src/pages/_unused/

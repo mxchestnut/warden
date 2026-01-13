@@ -22,24 +22,13 @@ import { doubleCsrf } from 'csrf-csrf';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
 import authRoutes from './routes/auth';
-import documentRoutes from './routes/documents';
-import studioRoutes from './routes/studio';
 import characterRoutes from './routes/characters';
 import pathcompanionRoutes from './routes/pathcompanion';
 import discordRoutes from './routes/discord';
 import systemRoutes from './routes/system';
-import filesRoutes from './routes/files';
-import knowledgeBaseRoutes from './routes/knowledgeBase';
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
-import hallOfFameRoutes from './routes/hall-of-fame';
-import memoriesRoutes from './routes/memories';
 import publicRoutes from './routes/public';
-import promptsRoutes from './routes/prompts';
-import loreRoutes from './routes/lore';
-import groupsRoutes from './routes/groups';
-import commentsRoutes from './routes/comments';
-import collaborationRoutes from './routes/collaboration';
 import { setupPassport } from './config/passport';
 import { initializeDiscordBot } from './services/discordBot';
 import { getSecretsWithFallback } from './config/secrets';
@@ -245,43 +234,21 @@ app.get('/api/csrf-token', (req, res) => {
 // Apply CSRF protection to all API routes except auth (login/register) and discord (bot integration)
 // Auth routes handle their own CSRF for better UX
 // Discord routes are called by the bot, which can't send CSRF tokens
-app.use('/api/documents', doubleCsrfProtection);
-app.use('/api/studio', doubleCsrfProtection);
 app.use('/api/characters', doubleCsrfProtection);
 app.use('/api/pathcompanion', doubleCsrfProtection);
 app.use('/api/system', doubleCsrfProtection);
-app.use('/api/files', doubleCsrfProtection);
-app.use('/api/knowledge-base', doubleCsrfProtection);
 app.use('/api/admin', doubleCsrfProtection);
 app.use('/api/stats', doubleCsrfProtection);
-app.use('/api/hall-of-fame', doubleCsrfProtection);
-app.use('/api/memories', doubleCsrfProtection);
-app.use('/api/prompts', doubleCsrfProtection);
-app.use('/api/lore', doubleCsrfProtection);
-app.use('/api/groups', doubleCsrfProtection);
-app.use('/api/comments', doubleCsrfProtection);
-app.use('/api/collaboration', doubleCsrfProtection);
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/studio', studioRoutes);
 app.use('/api/characters', characterRoutes);
 app.use('/api/pathcompanion', pathcompanionRoutes);
 app.use('/api/discord', discordRoutes);
 app.use('/api/system', systemRoutes);
-app.use('/api/files', filesRoutes);
-app.use('/api/knowledge-base', knowledgeBaseRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stats', statsRoutes);
-app.use('/api/hall-of-fame', hallOfFameRoutes);
-app.use('/api/memories', memoriesRoutes);
 app.use('/api/public', publicRoutes); // No auth required for public profiles
-app.use('/api/prompts', promptsRoutes);
-app.use('/api/lore', loreRoutes);
-app.use('/api/groups', groupsRoutes);
-app.use('/api/comments', commentsRoutes);
-app.use('/api/collaboration', collaborationRoutes);
 
 // Swagger API Documentation
 setupSwagger(app);

@@ -20,11 +20,8 @@ const PageLoader = () => (
 // Lazy load pages for optimal code splitting
 const Home = lazy(() => import('./pages/Home'))
 const Feed = lazy(() => import('./pages/Feed'))
-const Groups = lazy(() => import('./pages/Groups'))
-const Studio = lazy(() => import('./pages/Studio').then(module => ({ default: module.Studio })))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings').then(module => ({ default: module.ProfileSettings })))
-const Bookshelf = lazy(() => import('./pages/Bookshelf'))
 const Characters = lazy(() => import('./pages/Characters').then(module => ({ default: module.Characters })))
 const CharacterEdit = lazy(() => import('./pages/CharacterEdit'))
 const BetaMarketplace = lazy(() => import('./pages/BetaMarketplace'))
@@ -36,7 +33,7 @@ const PendingApproval = lazy(() => import('./pages/PendingApproval'))
 const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })))
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'feed' | 'groups' | 'profile-settings' | 'studio' | 'dashboard' | 'bookshelf' | 'characters' | 'character-edit' | 'beta-marketplace' | 'auth-callback' | 'terms' | 'rules' | 'invite' | 'pending-approval' | 'login'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'feed' | 'profile-settings' | 'dashboard' | 'characters' | 'character-edit' | 'beta-marketplace' | 'auth-callback' | 'terms' | 'rules' | 'invite' | 'pending-approval' | 'login'>('home')
 
   useEffect(() => {
     // Check authentication and route
@@ -82,16 +79,10 @@ function App() {
         setCurrentPage('rules')
       } else if (path === '/feed') {
         setCurrentPage('feed')
-      } else if (path === '/groups') {
-        setCurrentPage('groups')
       } else if (path === '/me' || path === '/profile' || path === '/settings') {
         setCurrentPage('profile-settings')
-      } else if (path === '/studio') {
-        setCurrentPage('studio')
       } else if (path === '/dashboard') {
         setCurrentPage('dashboard')
-      } else if (path === '/bookshelf' || path === '/books') {
-        setCurrentPage('bookshelf')
       } else if (path === '/characters') {
         setCurrentPage('characters')
       } else if (path.startsWith('/characters/') && (path.endsWith('/edit') || path.includes('/new'))) {
@@ -153,24 +144,12 @@ function App() {
       return <Feed />
     }
     
-    if (currentPage === 'groups') {
-      return <Groups />
-    }
-    
     if (currentPage === 'profile-settings') {
       return <ProfileSettings />
     }
     
-    if (currentPage === 'studio') {
-      return <Studio />
-    }
-    
     if (currentPage === 'dashboard') {
       return <Dashboard />
-    }
-    
-    if (currentPage === 'bookshelf') {
-      return <Bookshelf />
     }
 
     if (currentPage === 'characters') {

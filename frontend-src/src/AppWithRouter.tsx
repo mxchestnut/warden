@@ -21,11 +21,8 @@ const PageLoader = () => (
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
 const Feed = lazy(() => import('./pages/Feed'));
-const Groups = lazy(() => import('./pages/Groups'));
-const Studio = lazy(() => import('./pages/Studio').then(module => ({ default: module.Studio })));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings').then(module => ({ default: module.ProfileSettings })));
-const Bookshelf = lazy(() => import('./pages/Bookshelf'));
 const Characters = lazy(() => import('./pages/Characters').then(module => ({ default: module.Characters })));
 const CharacterEdit = lazy(() => import('./pages/CharacterEdit'));
 const BetaMarketplace = lazy(() => import('./pages/BetaMarketplace'));
@@ -93,16 +90,6 @@ function AppWithRouter() {
               <Feed />
             </ProtectedRoute>
           } />
-          <Route path="/groups" element={
-            <ProtectedRoute>
-              <Groups />
-            </ProtectedRoute>
-          } />
-          <Route path="/studio/*" element={
-            <ProtectedRoute>
-              <Studio />
-            </ProtectedRoute>
-          } />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
@@ -111,11 +98,6 @@ function AppWithRouter() {
           <Route path="/profile-settings" element={
             <ProtectedRoute>
               <ProfileSettings />
-            </ProtectedRoute>
-          } />
-          <Route path="/bookshelf" element={
-            <ProtectedRoute>
-              <Bookshelf />
             </ProtectedRoute>
           } />
           <Route path="/characters" element={
