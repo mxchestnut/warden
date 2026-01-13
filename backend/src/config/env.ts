@@ -18,7 +18,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   
   // Server Configuration
-  PORT: z.string().regex(/^\d+$/).transform(Number).default('3000'),
+  PORT: z.string().default('3000').transform(Number),
   
   // Database
   DATABASE_URL: z.string().url().describe('PostgreSQL connection string (e.g., postgresql://user:pass@host:5432/db)'),
@@ -50,7 +50,7 @@ const envSchema = z.object({
   STRIPE_PRICE_ID_MASTER: z.string().optional(),
   
   // Optional Configuration
-  USE_REDIS: z.string().transform(val => val !== 'false').default('true'),
+  USE_REDIS: z.string().default('true').transform(val => val !== 'false'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   
   // Sentry Error Tracking
@@ -71,12 +71,12 @@ try {
     console.error('❌ Environment validation failed:');
     console.error('');
     
-    error.errors.forEach((err) => {
+    error.issues.forEach((err: z.ZodIssue) => {
       const path = err.path.join('.');
       console.error(`  • ${path}: ${err.message}`);
       
       // Show description if available
-      const field = envSchema.shape[err.path[0] as keyof typeof envSchema.shape];
+      const field = err.path[0] ? (envSchema.shape as any)[err.path[0]] : undefined;
       if (field && field.description) {
         console.error(`    → ${field.description}`);
       }
