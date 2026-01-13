@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 import { authService, User } from '../services/auth'
 import { ShoppingBag } from 'lucide-react'
 

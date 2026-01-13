@@ -21,11 +21,11 @@ import compression from 'compression';
 import { doubleCsrf } from 'csrf-csrf';
 import { RedisStore } from 'connect-redis';
 import { createClient } from 'redis';
-import authRoutes from './routes/auth';
-import characterRoutes from './routes/characters';
-import pathcompanionRoutes from './routes/pathcompanion';
+import authRoutes from './routes/auth'; // auth/index.ts
+import characterRoutes from './routes/characters'; // characters/index.ts
+import pathcompanionRoutes from './routes/characters/pathcompanion';
 import discordRoutes from './routes/discord';
-import systemRoutes from './routes/system';
+import systemRoutes from './routes/system'; // system/index.ts
 import adminRoutes from './routes/admin';
 import statsRoutes from './routes/stats';
 import publicRoutes from './routes/public';
@@ -85,14 +85,15 @@ async function startServer() {
         }
       });
 
-      redisClient.on('error', (err: any) => {
+      redisClient.on('error', (err: Error) => {
         logError('Redis Client Error', err);
       });
       redisClient.on('connect', () => logInfo('Connected to Redis for session storage'));
 
       await redisClient.connect();
-    } catch (error: any) {
-      logWarn('Redis not available - using in-memory session storage', error);
+    } catch (error: Error | unknown) {
+      const errMessage = error instanceof Error ? error : new Error(String(error));
+      logWarn('Redis not available - using in-memory session storage', errMessage);
       redisClient = null;
     }
   } else {
@@ -177,7 +178,23 @@ app.use(cookieParser());
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Session configuration - use Redis if available, otherwise in-memory
-  const sessionConfig: any = {
+  interface SessionConfigType {
+    secret: string;
+    resave: boolean;
+    saveUninitialized: boolean;
+    rolling?: boolean;
+    cookie: {
+      maxAge: number;
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: string;
+      domain?: string;
+      path?: string;
+    };
+    store?: any;
+  }
+  
+  const sessionConfig: SessionConfigType = {
     secret: secrets.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -186,9 +203,7 @@ app.use(cookieParser());
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
-      domain: undefined,
-      path: '/'
+      sameSite: 'lax'
     }
   };
 
@@ -200,7 +215,7 @@ app.use(cookieParser());
     });
   }
 
-  app.use(session(sessionConfig));
+  app.use(session(sessionConfig as any));
 
 // Passport middleware
 app.use(passport.initialize());
@@ -253,7 +268,7 @@ app.use('/api/public', publicRoutes); // No auth required for public profiles
 // Swagger API Documentation
 setupSwagger(app);
 
-// Health check
+// Health check (also available at /api/system/health)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
@@ -277,11 +292,13 @@ app.use((req, res, next) => {
   Sentry.setupExpressErrorHandler(app);
 
   // Error handling middleware
-  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    logger.error({ err, path: req.path, method: req.method, userId: (req.user as any)?.id }, 'Request error');
+  app.use((err: Error | unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const error = err instanceof Error ? err : new Error(String(err));
+    const userId = (req.user as any)?.id;
+    logger.error({ err: error, path: req.path, method: req.method, userId }, 'Request error');
 
     // Send error to Sentry
-    Sentry.captureException(err, {
+    Sentry.captureException(error, {
       user: req.user ? { id: (req.user as any).id, username: (req.user as any).username } : undefined,
       tags: {
         path: req.path,

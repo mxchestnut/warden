@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User, Edit2, Save, X, ArrowLeft, ExternalLink, BookOpen, DollarSign, Lock } from 'lucide-react'
 import { authService } from '../services/auth'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 
 type ProfileTab = 'general' | 'beta' | 'writer'
 
@@ -54,7 +54,7 @@ export function Profile() {
     twitter_handle: ''
   })
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://api.workshelf.dev'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://warden.my'
 
   useEffect(() => {
     loadProfile()
@@ -218,9 +218,10 @@ export function Profile() {
       setEditing(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err: any) {
-      setError(err.message || 'Failed to save changes')
-      console.error('Error saving profile:', err)
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message || 'Failed to save changes')
+      console.error('Error saving profile:', error)
     } finally {
       setSaving(false)
     }
@@ -496,7 +497,7 @@ export function Profile() {
           <div className="mb-4 p-4 rounded-lg border" style={{ backgroundColor: '#37322E', borderColor: '#6C6A68' }}>
             <h3 className="font-semibold mb-2 text-white">Sign into Element</h3>
             <div className="text-sm space-y-1" style={{ color: '#B3B2B0' }}>
-              <p><strong>Homeserver:</strong> https://matrix.workshelf.dev</p>
+              <p><strong>Homeserver:</strong> https://matrix.warden.my</p>
               <p><strong>Username:</strong> {profile.username}</p>
               <p><strong>Password:</strong> Set below</p>
             </div>
@@ -579,7 +580,7 @@ export function Profile() {
                     setMatrixPassword('')
                     setMatrixPassword2('')
                   }
-                } catch (e) {
+                } catch (_e) {
                   setMatrixPwMessage({ type: 'error', text: 'Unexpected error. Please try again.' })
                 } finally {
                   setMatrixPwLoading(false)

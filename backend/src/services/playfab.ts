@@ -2,6 +2,12 @@ import PlayFab from 'playfab-sdk/Scripts/PlayFab/PlayFab';
 import PlayFabClient from 'playfab-sdk/Scripts/PlayFab/PlayFabClient';
 import * as zlib from 'zlib';
 import axios from 'axios';
+import type {
+  PlayFabResult,
+  PlayFabError,
+  PlayFabCharacterData,
+  PlayFabUserDataResult
+} from '../types/playfab';
 
 // PathCompanion Title ID (publicly visible)
 const TITLE_ID = 'BCA4C';
@@ -18,7 +24,7 @@ export interface PathCompanionAuth {
 export interface PathCompanionCharacter {
   characterId: string;
   characterName: string;
-  data: any; // The character sheet data from PlayFab
+  data: PlayFabCharacterData; // The character sheet data from PlayFab
   lastModified: Date;
 }
 
@@ -39,10 +45,10 @@ export async function loginToPlayFab(username: string, password: string): Promis
       }
     };
 
-    PlayFabClient.LoginWithPlayFab(usernameRequest, (error: any, result: any) => {
+    PlayFabClient.LoginWithPlayFab(usernameRequest, (error: PlayFabError | null, result: PlayFabResult | undefined) => {
       if (error) {
         // If username login fails with "User not found", try email login
-        if (error.error === 'AccountNotFound' || error.errorCode === 1001) {
+        if ((error as any).error === 'AccountNotFound' || (error as any).errorCode === 1001) {
           console.log('Username login failed, trying email login...');
 
           const emailRequest = {
@@ -54,7 +60,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
             }
           };
 
-          PlayFabClient.LoginWithEmailAddress(emailRequest, (emailError: any, emailResult: any) => {
+          PlayFabClient.LoginWithEmailAddress(emailRequest, (emailError: PlayFabError | null, emailResult: PlayFabResult | undefined) => {
             if (emailError) {
               console.error('PlayFab email login error:', JSON.stringify(emailError, null, 2));
               const errorMsg = emailError.errorMessage || emailError.error || 'PlayFab login failed';
@@ -103,7 +109,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
  * Get user data from PlayFab
  * This typically includes character references
  */
-export async function getUserData(sessionTicket: string): Promise<any> {
+export async function getUserData(sessionTicket: string): Promise<Record<string, any>> {
   return new Promise((resolve, reject) => {
     PlayFab.settings.sessionTicket = sessionTicket;
 
@@ -111,7 +117,7 @@ export async function getUserData(sessionTicket: string): Promise<any> {
       SessionTicket: sessionTicket,
     };
 
-    PlayFabClient.GetUserData(request, (error: any, result: any) => {
+    PlayFabClient.GetUserData(request, (error: PlayFabError | null, result: PlayFabResult<PlayFabUserDataResult> | undefined) => {
       if (error) {
         console.error('GetUserData error:', JSON.stringify(error, null, 2));
         reject(new Error(error.errorMessage || 'Failed to get user data'));
@@ -144,13 +150,11 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
         CustomId: `my1eparty_import_${Date.now()}`,
         CreateAccount: true,
         TitleId: TITLE_ID
-      }, (error: any, result: any) => {
+      }, (error: any, _result: any) => {
         if (error) {
           console.error('PlayFab anonymous login error:', error);
           return reject(new Error('Failed to authenticate with PathCompanion'));
         }
-
-        const sessionTicket = result.data.SessionTicket;
 
         // Now try to get the user's public data
         PlayFabClient.GetUserData({
@@ -167,7 +171,6 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
           }
 
           try {
-            const zlib = require('zlib');
             const charValue = result2.data.Data[character];
             const rawValue = charValue.Value;
 
@@ -184,8 +187,8 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
               data: charData,
               lastModified: new Date(charValue.LastUpdated || Date.now()),
             });
-          } catch (e) {
-            console.error('Failed to decompress character data:', e);
+          } catch (_e) {
+            console.error('Failed to decompress character data:', _e);
             reject(new Error('Failed to parse character data'));
           }
         });
@@ -197,7 +200,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
 }
 
 /**
- * Get a specific character's data
+ * Get a specific character's data for a given session ticket.
  */
 export async function getCharacter(sessionTicket: string, characterId: string): Promise<PathCompanionCharacter | null> {
   try {
@@ -312,7 +315,7 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
 /**
  * Helper to extract character level from PathCompanion character data
  */
-export function extractCharacterLevel(characterData: any): number {
+export function extractCharacterLevel(characterData: PlayFabCharacterData): number {
   // Try different possible locations for level data
   if (characterData.characterInfo?.levelInfo) {
     // levelInfo is an object with keys like "1", "2", etc. for each level
@@ -347,7 +350,7 @@ export function extractCharacterLevel(characterData: any): number {
  * Helper to extract ability scores from PathCompanion character data
  * PathCompanion uses Pathfinder 2e, which has the same core abilities as D&D
  */
-export function extractAbilityScores(characterData: any) {
+export function extractAbilityScores(characterData: PlayFabCharacterData) {
   // PathCompanion stores abilities at the root level
   const abilities = characterData.abilities ||
                     characterData.characterInfo?.stats ||
@@ -356,7 +359,7 @@ export function extractAbilityScores(characterData: any) {
                     {};
 
   // Helper to extract score from PathCompanion's complex structure
-  const extractScore = (stat: any): number => {
+  const extractScore = (stat: Record<string, any>): number => {
     if (typeof stat === 'number') return stat;
     if (stat?.total !== undefined) return stat.total;
     if (stat?.permanentTotal !== undefined) return stat.permanentTotal;
@@ -384,7 +387,7 @@ export function calculateModifier(score: number): number {
 /**
  * Extract combat stats from PathCompanion character data
  */
-export function extractCombatStats(characterData: any) {
+export function extractCombatStats(characterData: PlayFabCharacterData) {
   // PathCompanion stores combat data at root level in combat/defense/offense objects
   const combat = characterData.combat || {};
   const defense = characterData.defense || {};
@@ -441,7 +444,7 @@ export function extractCombatStats(characterData: any) {
 /**
  * Extract saving throws from PathCompanion character data
  */
-export function extractSavingThrows(characterData: any) {
+export function extractSavingThrows(characterData: PlayFabCharacterData) {
   // PathCompanion stores saves in the defense object
   const defense = characterData.defense || {};
   const saves = defense.saves || defense.savingThrows || {};
@@ -456,15 +459,15 @@ export function extractSavingThrows(characterData: any) {
 /**
  * Extract skills from PathCompanion character data
  */
-export function extractSkills(characterData: any) {
+export function extractSkills(characterData: PlayFabCharacterData) {
   // PathCompanion stores skills at root level
   const skillsData = characterData.skills || {};
-  const skills: any = {};
+  const skills: Record<string, any> = {};
 
   // PathCompanion stores skills as objects with ranks, modifiers, etc.
   for (const [skillName, skillValue] of Object.entries(skillsData)) {
     if (typeof skillValue === 'object' && skillValue !== null) {
-      const skill: any = skillValue;
+      const skill = skillValue as Record<string, any>;
       skills[skillName] = {
         ranks: skill.ranks || 0,
         total: skill.total || skill.value || 0,
@@ -482,16 +485,16 @@ export function extractSkills(characterData: any) {
 /**
  * Extract feats from PathCompanion character data
  */
-export function extractFeats(characterData: any) {
+export function extractFeats(characterData: PlayFabCharacterData) {
   const charInfo = characterData.characterInfo || {};
   const feats: string[] = [];
 
   // PathCompanion stores feats in levelInfo[level].Feats
   if (charInfo.levelInfo) {
     for (const level of Object.keys(charInfo.levelInfo)) {
-      const levelData = charInfo.levelInfo[level];
+      const levelData = (charInfo.levelInfo as Record<string, any>)[level];
       if (levelData.Feats && Array.isArray(levelData.Feats)) {
-        feats.push(...levelData.Feats.map((feat: any) => {
+        feats.push(...levelData.Feats.map((feat: Record<string, any> | string) => {
           if (typeof feat === 'string') return feat;
           return feat.name || feat.featName || 'Unknown Feat';
         }));
@@ -505,25 +508,25 @@ export function extractFeats(characterData: any) {
 /**
  * Extract special abilities from PathCompanion character data
  */
-export function extractSpecialAbilities(characterData: any) {
+export function extractSpecialAbilities(characterData: PlayFabCharacterData) {
   const charInfo = characterData.characterInfo || {};
   const abilities: string[] = [];
 
   // Check various possible locations for special abilities
   if (charInfo.specialAbilities && Array.isArray(charInfo.specialAbilities)) {
-    abilities.push(...charInfo.specialAbilities.map((a: any) =>
+    abilities.push(...charInfo.specialAbilities.map((a: Record<string, any> | string) =>
       typeof a === 'string' ? a : a.name || a.description || 'Unknown Ability'
     ));
   }
 
   if (charInfo.classAbilities && Array.isArray(charInfo.classAbilities)) {
-    abilities.push(...charInfo.classAbilities.map((a: any) =>
+    abilities.push(...charInfo.classAbilities.map((a: Record<string, any> | string) =>
       typeof a === 'string' ? a : a.name || a.description || 'Unknown Ability'
     ));
   }
 
   if (charInfo.traits && Array.isArray(charInfo.traits)) {
-    abilities.push(...charInfo.traits.map((t: any) =>
+    abilities.push(...charInfo.traits.map((t: Record<string, any> | string) =>
       typeof t === 'string' ? t : t.name || t.description || 'Unknown Trait'
     ));
   }
@@ -534,14 +537,14 @@ export function extractSpecialAbilities(characterData: any) {
 /**
  * Extract weapons from PathCompanion character data
  */
-export function extractWeapons(characterData: any) {
+export function extractWeapons(characterData: PlayFabCharacterData) {
   const equipment = characterData.equipment || {};
   const offense = characterData.offense || {};
   const weaponsData = equipment.weapons || offense.weapons || [];
 
   if (!Array.isArray(weaponsData)) return [];
 
-  return weaponsData.map((weapon: any) => ({
+  return weaponsData.map((weapon: Record<string, any>) => ({
     name: weapon.name || weapon.weaponName || weapon.Name || 'Unknown Weapon',
     attackBonus: weapon.attackBonus || weapon.attack || weapon.AttackBonus || 0,
     damage: weapon.damage || weapon.damageRoll || weapon.Damage || '1d6',
@@ -555,7 +558,7 @@ export function extractWeapons(characterData: any) {
 /**
  * Extract armor from PathCompanion character data
  */
-export function extractArmor(characterData: any) {
+export function extractArmor(characterData: PlayFabCharacterData) {
   const equipment = characterData.equipment || {};
   const defense = characterData.defense || {};
   const armorData = equipment.armor || defense.armor || {};
@@ -575,16 +578,16 @@ export function extractArmor(characterData: any) {
 /**
  * Extract spells from PathCompanion character data
  */
-export function extractSpells(characterData: any) {
+export function extractSpells(characterData: PlayFabCharacterData) {
   const spellsData = characterData.spells || {};
-  const spells: any = {};
+  const spells: Record<string, any> = {};
 
   // PathCompanion might organize spells by level
   for (let level = 0; level <= 9; level++) {
     const levelKey = `level${level}`;
     const levelSpells = spellsData[levelKey] || spellsData[level.toString()] || spellsData[level];
     if (levelSpells && Array.isArray(levelSpells)) {
-      spells[level] = levelSpells.map((spell: any) =>
+      spells[level] = levelSpells.map((spell: Record<string, any> | string) =>
         typeof spell === 'string' ? spell : spell.name || spell.spellName || spell.Name || 'Unknown Spell'
       );
     }
@@ -596,7 +599,7 @@ export function extractSpells(characterData: any) {
 /**
  * Extract basic character info (race, alignment, deity, size)
  */
-export function extractBasicInfo(characterData: any) {
+export function extractBasicInfo(characterData: PlayFabCharacterData) {
   const charInfo = characterData.characterInfo || {};
 
   // Extract character classes from levelInfo
@@ -635,7 +638,7 @@ export function extractBasicInfo(characterData: any) {
 /**
  * Extract defensive abilities (DR, SR, resistances, immunities)
  */
-export function extractDefensiveAbilities(characterData: any) {
+export function extractDefensiveAbilities(characterData: PlayFabCharacterData) {
   const defense = characterData.defense || {};
 
   return {
@@ -649,9 +652,8 @@ export function extractDefensiveAbilities(characterData: any) {
 /**
  * Extract caster information (caster level, spell DC, concentration)
  */
-export function extractCasterInfo(characterData: any) {
+export function extractCasterInfo(characterData: PlayFabCharacterData) {
   const spells = characterData.spells || {};
-  const characterInfo = characterData.characterInfo || {};
 
   // Caster level is often stored per class
   const casterLevel = spells.casterLevel || spells.CL || 0;

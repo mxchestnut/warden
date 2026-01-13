@@ -104,7 +104,7 @@ logger.fatal({ err: new Error('Critical') }, 'Fatal error'); // Application cras
 // 7. REAL EXAMPLE: CHARACTER SERVICE
 // ==============================================================================
 
-class CharacterService {
+export class CharacterService {
   private logger = createLogger('CharacterService');
 
   async createCharacter(userId: number, data: any) {
@@ -149,7 +149,7 @@ class CharacterService {
 // 8. REAL EXAMPLE: DISCORD BOT
 // ==============================================================================
 
-class DiscordBot {
+export class DiscordBot {
   private logger = createLogger('DiscordBot');
 
   handleCommand(command: string, userId: string, args: string[]) {

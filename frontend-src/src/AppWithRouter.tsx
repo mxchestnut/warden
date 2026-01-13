@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ToastContainer } from './components/Toast';
-import { ChatManager } from './components/ChatManager';
-import { ChatLauncher } from './components/ChatLauncher';
-import { ChatBar } from './components/ChatBar';
-import { useAuth } from './hooks/useAuth';
+import { ToastContainer } from './components/ui/Toast';
+import { ChatManager } from './features/chat/ChatManager';
+import { ChatLauncher } from './features/chat/ChatLauncher';
+import { ChatBar } from './features/chat/ChatBar';
+import { useAuth } from './features/auth/useAuth';
 import './App.css';
 
 // Loading component
@@ -23,15 +23,15 @@ const Home = lazy(() => import('./pages/Home'));
 const Feed = lazy(() => import('./pages/Feed'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings').then(module => ({ default: module.ProfileSettings })));
-const Characters = lazy(() => import('./pages/Characters').then(module => ({ default: module.Characters })));
-const CharacterEdit = lazy(() => import('./pages/CharacterEdit'));
+const Characters = lazy(() => import('./features/characters/Characters').then(module => ({ default: module.Characters })));
+const CharacterEdit = lazy(() => import('./features/characters/CharacterEdit'));
 const BetaMarketplace = lazy(() => import('./pages/BetaMarketplace'));
-const AuthCallback = lazy(() => import('./pages/AuthCallback').then(module => ({ default: module.AuthCallback })));
+const AuthCallback = lazy(() => import('./features/auth/AuthCallback').then(module => ({ default: module.AuthCallback })));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const HouseRules = lazy(() => import('./pages/HouseRules'));
 const Invite = lazy(() => import('./pages/Invite'));
-const PendingApproval = lazy(() => import('./pages/PendingApproval'));
-const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
+const PendingApproval = lazy(() => import('./features/auth/PendingApproval'));
+const Login = lazy(() => import('./features/auth/Login').then(module => ({ default: module.Login })));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -105,7 +105,7 @@ function AppWithRouter() {
               <Characters />
             </ProtectedRoute>
           } />
-          <Route path="/characters/:id/edit" element={
+          <Route path="/characters/:id" element={
             <ProtectedRoute>
               <CharacterEdit />
             </ProtectedRoute>

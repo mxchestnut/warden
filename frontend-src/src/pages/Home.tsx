@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Users, Scroll, Sparkles, Sword } from 'lucide-react'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 import { authService, User } from '../services/auth'
 
 interface PlatformStats {

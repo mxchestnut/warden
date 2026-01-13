@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 import { authService, User } from '../services/auth'
 import { ArrowLeft, Save, Link as LinkIcon, Upload } from 'lucide-react'
 import { CharacterField } from '../components/CharacterField'
@@ -218,7 +218,7 @@ export function CharacterEdit() {
     }
   }
 
-  const handleChange = (field: keyof Character, value: any) => {
+  const handleChange = (field: keyof Character, value: string | number | boolean | Record<string, any>) => {
     setCharacter(prev => ({ ...prev, [field]: value }))
   }
 

@@ -123,8 +123,9 @@ export function RoleEditor({ isOpen, onClose, onSave, role, existingRoles }: Rol
     try {
       await onSave(formData)
       onClose()
-    } catch (err: any) {
-      setError(err.message || 'Failed to save role')
+    } catch (err: Error | unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message || 'Failed to save role')
     } finally {
       setSaving(false)
     }

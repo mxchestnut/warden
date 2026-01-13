@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import type * as Matrix from 'matrix-js-sdk'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.workshelf.dev'
+const API_URL = import.meta.env.VITE_API_URL || 'https://warden.my'
 
 interface MatrixContextType {
   client: Matrix.MatrixClient | null
@@ -50,7 +50,7 @@ export function MatrixProvider({ children }: MatrixProviderProps): React.JSX.Ele
         // Create Matrix client
         const sdk = MatrixSDK ?? (MatrixSDK = await import('matrix-js-sdk'))
         const matrixClient = sdk.createClient({
-          baseUrl: homeserver || 'https://matrix.workshelf.dev',
+          baseUrl: homeserver || 'https://matrix.warden.my',
           accessToken: matrix_access_token,
           userId: matrix_user_id,
           store: new (sdk as any).MemoryStore(),
@@ -60,7 +60,7 @@ export function MatrixProvider({ children }: MatrixProviderProps): React.JSX.Ele
         await matrixClient.startClient({ initialSyncLimit: 10 })
 
         // Wait for initial sync
-        matrixClient.once(sdk.ClientEvent.Sync, (state: any) => {
+        matrixClient.once(sdk.ClientEvent.Sync, (state: 'PREPARED' | 'SYNCING' | 'STOPPED' | string) => {
           if (state === (sdk as any).SyncState.Prepared) {
             console.log('[Matrix] Client ready')
             setIsReady(true)

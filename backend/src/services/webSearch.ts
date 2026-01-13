@@ -50,8 +50,9 @@ export async function searchGoogle(query: string): Promise<{ title: string; snip
     }
 
     return null;
-  } catch (error: any) {
-    console.error('Google search error:', error.message);
-    return null;
+  } catch (error: Error | unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Web search error:', err);
+    throw err;
   }
 }

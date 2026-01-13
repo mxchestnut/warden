@@ -83,7 +83,9 @@ router.get('/users/:userId', async (req, res) => {
       .where(eq(documents.userId, userId));
 
     // Remove sensitive data
-    const { password: _, pathCompanionPassword: __, ...safeUser } = user;
+    const { password: _password, pathCompanionPassword: _pathCompanionPassword, ...safeUser } = user;
+    void _password;
+    void _pathCompanionPassword;
 
     res.json({
       user: safeUser,

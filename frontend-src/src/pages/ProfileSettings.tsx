@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link as LinkIcon } from 'lucide-react'
 import { authService } from '../services/auth'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 
 type ProfileTab = 'profile' | 'pathcompanion' | 'discord'
 

@@ -50,13 +50,6 @@
       "enabled": false
     },
     {
-      "description": "Keep TipTap at v2 (v3 has breaking changes)",
-      "matchPackagePatterns": [
-        "^@tiptap/"
-      ],
-      "allowedVersions": "^2.0.0"
-    },
-    {
       "description": "Major version updates - create separate PRs for review",
       "matchUpdateTypes": [
         "major"

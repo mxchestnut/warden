@@ -58,7 +58,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
     rating: '',
   })
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://api.workshelf.dev'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://warden.my'
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -76,11 +76,11 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
       const data = await response.json()
 
       if (data.items && data.items.length > 0) {
-        const results: BookSearchResult[] = data.items.map((item: any) => {
+        const results: BookSearchResult[] = data.items.map((item: Record<string, any>) => {
           const book = item.volumeInfo
           const industryIdentifiers = book.industryIdentifiers || []
-          const isbn13 = industryIdentifiers.find((id: any) => id.type === 'ISBN_13')?.identifier
-          const isbn10 = industryIdentifiers.find((id: any) => id.type === 'ISBN_10')?.identifier
+          const isbn13 = industryIdentifiers.find((id: Record<string, any>) => id.type === 'ISBN_13')?.identifier
+          const isbn10 = industryIdentifiers.find((id: Record<string, any>) => id.type === 'ISBN_10')?.identifier
           
           return {
             isbn: isbn13 || isbn10 || '',
@@ -173,9 +173,10 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
       setSearchResults([])
       await loadRecommendations(book)
       
-    } catch (error: any) {
-      console.error('Failed to add book:', error)
-      alert(error.message || 'Failed to add book to shelf')
+    } catch (error: Error | unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Failed to add book:', err)
+      alert((err as any).message || 'Failed to add book to shelf')
     } finally {
       setAdding(false)
     }
@@ -258,9 +259,10 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
       } else {
         alert('This book already has complete data!')
       }
-    } catch (error: any) {
-      console.error('Failed to enhance book:', error)
-      alert(error.message || 'Failed to enhance book data. Please try again.')
+    } catch (error: Error | unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Failed to enhance book:', err)
+      alert((err as any).message || 'Failed to enhance book data. Please try again.')
     } finally {
       setEnhancing(null)
     }
@@ -318,9 +320,10 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
       })
       onBookAdded()
       onClose()
-    } catch (error: any) {
-      console.error('Failed to add book:', error)
-      alert(error.message || 'Failed to add book to shelf')
+    } catch (error: Error | unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('Failed to add book:', err)
+      alert((err as any).message || 'Failed to add book to shelf')
     } finally {
       setAdding(false)
     }

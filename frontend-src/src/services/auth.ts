@@ -54,6 +54,9 @@ class AuthService {
 
     const data = await response.json()
     this.user = data.user
+    if (!this.user) {
+      throw new Error('No user returned from login')
+    }
     return this.user
   }
 
@@ -77,6 +80,9 @@ class AuthService {
 
     const data = await response.json()
     this.user = data.user
+    if (!this.user) {
+      throw new Error('No user returned from registration')
+    }
     return this.user
   }
 

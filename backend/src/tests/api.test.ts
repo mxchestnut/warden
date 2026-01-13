@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import request from 'supertest';
-import express from 'express';
+import { describe, it, expect } from 'vitest';
 
 // This is a template - you'll need to import your actual app
 // import app from '../server';

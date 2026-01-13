@@ -22,10 +22,6 @@ declare global {
 }
 
 let botClient: Client | null = global.__WARDEN_CLIENT__ ?? null;
-const webhookCache = new Map<string, Webhook>(); // channelId -> webhook
-
-// Track initialization to prevent duplicates (persisted globally)
-let botInitialized = global.__WARDEN_INIT__ ?? false;
 
 // Normalize string by removing accents and converting to lowercase
 function normalizeString(str: string): string {
@@ -48,7 +44,6 @@ export function initializeDiscordBot(token: string) {
     return global.__WARDEN_CLIENT__ ?? botClient;
   }
 
-  botInitialized = true;
   global.__WARDEN_INIT__ = true;
 
   if (!token) {
@@ -363,7 +358,7 @@ async function handleCommands(message: Message, content: string, client: Client)
     // Try to reply with error, but catch if message was deleted (e.g., for security in !connect)
     try {
       await message.reply('❌ An error occurred processing your command.');
-    } catch (replyError) {
+    } catch {
       // Message was deleted or reply failed, silently ignore
       console.log('Could not reply with error message (message may have been deleted)');
     }
@@ -987,7 +982,7 @@ async function handleProfile(message: Message, args: string[]) {
   // Try to pin the message (requires permissions)
   try {
     await reply.pin();
-  } catch (error) {
+  } catch {
     // Silently fail if bot doesn't have pin permissions
     console.log('Could not pin profile message - missing permissions');
   }
@@ -1124,7 +1119,6 @@ async function handleRoll(message: Message, args: string[]) {
   const character = mapping[0].character_sheets;
 
   // Determine roll type and calculate
-  let rollType: string;
   let modifier = 0;
   let rollDescription = '';
   let statName: string;
@@ -1132,7 +1126,6 @@ async function handleRoll(message: Message, args: string[]) {
   // Check if it's an ability score
   const abilityScores = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
   if (abilityScores.some(stat => rollParam.includes(stat))) {
-    rollType = 'ability';
     const stat = abilityScores.find(s => rollParam.includes(s))!;
     modifier = Math.floor(((character as any)[stat] - 10) / 2);
     rollDescription = `${stat.charAt(0).toUpperCase() + stat.slice(1)} Check`;
@@ -1140,32 +1133,28 @@ async function handleRoll(message: Message, args: string[]) {
   }
   // Check if it's a save
   else if (rollParam.includes('fortitude') || rollParam === 'fort') {
-    rollType = 'save';
     modifier = character.fortitudeSave || 0;
     rollDescription = 'Fortitude Save';
     statName = 'fortitude';
   } else if (rollParam.includes('reflex') || rollParam === 'ref') {
-    rollType = 'save';
     modifier = character.reflexSave || 0;
     rollDescription = 'Reflex Save';
     statName = 'reflex';
   } else if (rollParam.includes('will')) {
-    rollType = 'save';
     modifier = character.willSave || 0;
     rollDescription = 'Will Save';
     statName = 'will';
   }
   // Check if it's a skill
   else {
-    rollType = 'skill';
     let skills: any = character.skills;
 
     // Parse skills if they're stored as a JSON string
     if (typeof skills === 'string') {
       try {
         skills = JSON.parse(skills);
-      } catch (e) {
-        console.error(`[handleRoll] Failed to parse skills for ${character.name}:`, e);
+      } catch (_e) {
+        console.error(`[handleRoll] Failed to parse skills for ${character.name}:`, _e);
         await message.reply(`❌ ${character.name} has malformed skills data. Please re-sync from PathCompanion.`);
         return;
       }
@@ -1233,7 +1222,7 @@ async function handleRoll(message: Message, args: string[]) {
 const ENCRYPTION_KEY = process.env.PATHCOMPANION_ENCRYPTION_KEY || node_crypto.randomBytes(32).toString('hex');
 const ALGORITHM = 'aes-256-gcm';
 
-function encryptPassword(password: string): string {
+export function encryptPassword(password: string): string {
   const iv = node_crypto.randomBytes(16);
   const key = Buffer.from(ENCRYPTION_KEY.slice(0, 64), 'hex');
   const cipher = node_crypto.createCipheriv(ALGORITHM, key, iv);
@@ -1260,7 +1249,7 @@ function decryptPassword(encryptedPassword: string): string {
 }
 
 // Automatically refresh PathCompanion session if expired
-async function refreshPathCompanionSession(user: any): Promise<string> {
+export async function refreshPathCompanionSession(user: any): Promise<string> {
   if (!user.pathCompanionUsername || !user.pathCompanionPassword) {
     throw new Error('No PathCompanion credentials stored. Please use !connect first.');
   }
@@ -1705,8 +1694,8 @@ async function handleNameRoll(message: Message, characterName: string, rollParam
       if (typeof skills === 'string') {
         try {
           skills = JSON.parse(skills);
-        } catch (e) {
-          console.error(`[handleNameRoll] Failed to parse skills for ${character.name}:`, e);
+        } catch (_e) {
+          console.error(`[handleNameRoll] Failed to parse skills for ${character.name}:`, _e);
           await message.reply(`❌ ${character.name} has malformed skills data. Please re-sync from PathCompanion.`);
           return true;
         }
@@ -2731,8 +2720,6 @@ async function handleMemory(message: Message, args: string[]) {
 
 async function handleCharacterMemoriesView(message: Message, characterName: string) {
   try {
-    const guildId = message.guild?.id || '';
-
     // Find character
     const [character] = await db.select()
       .from(characterSheets)
@@ -2899,7 +2886,8 @@ async function handleLore(message: Message, args: string[]) {
 
       const loreList = entries.map((entry, idx) => {
         const date = new Date(entry.createdAt).toLocaleDateString();
-        return `**${entry.id}.** ${entry.content}\n*Added ${date}*`;
+        const displayIndex = idx + 1;
+        return `**${displayIndex}.** ${entry.content}\n*Added ${date}*`;
       }).join('\n\n');
 
       embed.addFields({ name: 'Entries', value: loreList.substring(0, 1024) });
@@ -3535,9 +3523,6 @@ async function trackCharacterActivity(
         eq(characterStats.characterId, characterId),
         eq(characterStats.guildId, guildId)
       ));
-
-    // Check for milestones and announce them
-    const newStats = { ...stat, ...updates };
 
     // Message milestones (every 100 messages)
     if (updates.totalMessages && updates.totalMessages % 100 === 0 && updates.totalMessages > 0) {

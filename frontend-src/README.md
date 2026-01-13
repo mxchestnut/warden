@@ -1,6 +1,6 @@
-# Work Shelf Frontend
+# Warden Frontend
 
-React + Vite frontend for the Work Shelf platform.
+React + Vite frontend for the Warden platform.
 
 ## Features
 
@@ -43,8 +43,8 @@ npm run preview  # Preview production build
 ## Docker
 
 ```bash
-docker build -t workshelf-frontend .
-docker run -p 80:80 workshelf-frontend
+docker build -t warden-frontend .
+docker run -p 80:80 warden-frontend
 ```
 
 ## Project Structure

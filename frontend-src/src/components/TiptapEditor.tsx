@@ -25,9 +25,11 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import { useState, useEffect } from 'react';
 import './TiptapEditor.css';
 
+import type { TipTapContent, EditorChangeHandler } from '../types/editor';
+
 interface TiptapEditorProps {
-  content?: any; // TipTap JSON content
-  onContentChange?: (content: any) => void;
+  content?: TipTapContent | string;
+  onContentChange?: EditorChangeHandler;
   onSave?: () => Promise<void>;
   autoSave?: boolean;
   placeholder?: string;

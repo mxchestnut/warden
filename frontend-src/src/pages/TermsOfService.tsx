@@ -148,7 +148,7 @@ export default function TermsOfService() {
               If you have questions about these Terms of Service, please contact us at:
             </p>
             <p className="text-gray-700">
-              Email: <a href="mailto:support@workshelf.dev" className="text-blue-600 hover:underline">support@workshelf.dev</a>
+              Email: <a href="mailto:support@warden.my" className="text-blue-600 hover:underline">support@warden.my</a>
             </p>
           </section>
         </div>

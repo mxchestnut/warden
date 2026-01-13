@@ -1,6 +1,4 @@
 import sharp from 'sharp';
-import path from 'path';
-import crypto from 'crypto';
 
 export interface ImageOptimizationOptions {
   maxWidth?: number;

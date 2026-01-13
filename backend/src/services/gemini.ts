@@ -123,7 +123,7 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
 
       // Extract tables only if they contain useful stats (for spells, items, etc.)
       // Skip navigation tables and generic page structure
-      $('table').each((_: number, table: any) => {
+      $('table').each((_: number, table: Record<string, any>) => {
         const tableText = $(table).text().replace(/\s+/g, ' ').trim();
         // Only include tables with stat-like keywords and reasonable length
         const hasStatKeywords = /\b(level|school|casting time|range|duration|saving throw|spell resistance|components|cost|weight|damage|AC|speed|HD)\b/i.test(tableText);
@@ -137,7 +137,7 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
     } else {
       // Generic parsing for other sites
       const pageTitle = $('h1').first().text().trim() || $('title').text().trim();
-      const paragraphs = $('p').map((_: number, el: any) => $(el).text().trim()).get();
+      const paragraphs = $('p').map((_: number, el: Record<string, any>) => $(el).text().trim()).get();
       const content = paragraphs.join('\n\n').substring(0, 2000);
 
       if (content.length > 100) {
@@ -150,14 +150,15 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
 
     console.log(`Extracted ${entries.length} entries from ${url}`);
     return entries;
-  } catch (error: any) {
-    console.error('Error learning from URL:', error);
+  } catch (error: Error | unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Error learning from URL:', err);
     console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      response: error.response?.status,
+      message: (err as any).message,
+      code: (err as any).code,
+      response: (err as any).response?.status,
       url: url
     });
-    return [];
+    throw err;
   }
 }

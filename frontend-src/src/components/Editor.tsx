@@ -1,5 +1,5 @@
 /**
- * WorkShelf Editor - Beautiful, distraction-free writing
+ * Warden Editor - Beautiful, distraction-free writing
  * 
  * Features:
  * - Rich text editing with TipTap
@@ -38,6 +38,7 @@ import FloatingMenu from '@tiptap/extension-floating-menu'
 import Youtube from '@tiptap/extension-youtube'
 import Mention from '@tiptap/extension-mention'
 import { useState, useCallback } from 'react'
+import type { TipTapContent, EditorChangeHandler, EditorUpdateEvent } from '../types/editor'
 import { 
   Bold, 
   Italic, 
@@ -55,10 +56,10 @@ import {
 } from 'lucide-react'
 
 interface EditorProps {
-  content?: any // TipTap JSON content
+  content?: TipTapContent | string // TipTap JSON content
   title: string
   onTitleChange: (title: string) => void
-  onContentChange: (content: any) => void
+  onContentChange: EditorChangeHandler
   onSave: () => Promise<void>
   autoSave?: boolean
   placeholder?: string
@@ -145,7 +146,7 @@ export function Editor({
         class: 'prose prose-lg max-w-none focus:outline-none min-h-[400px] px-8 py-6',
       },
     },
-    onUpdate: ({ editor }: { editor: any }) => {
+    onUpdate: ({ editor }: EditorUpdateEvent) => {
       const json = editor.getJSON()
       onContentChange(json)
       

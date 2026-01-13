@@ -132,7 +132,7 @@ export default function HouseRules() {
               <li>Use the "Report" button on the content</li>
               <li>Provide specific details about the violation</li>
               <li>Don't publicly call out rule violations (report privately)</li>
-              <li>For urgent safety concerns, contact us directly at support@workshelf.dev</li>
+              <li>For urgent safety concerns, contact us directly at support@warden.my</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mt-4 mb-3">Enforcement Actions</h3>
@@ -169,7 +169,7 @@ export default function HouseRules() {
               If you have questions about these House Rules or need clarification:
             </p>
             <p className="text-gray-700">
-              Email: <a href="mailto:support@workshelf.dev" className="text-blue-600 hover:underline">support@workshelf.dev</a>
+              Email: <a href="mailto:support@warden.my" className="text-blue-600 hover:underline">support@warden.my</a>
             </p>
           </section>
 
