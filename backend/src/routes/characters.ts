@@ -75,9 +75,18 @@ router.post('/upload-avatar', upload.single('avatar'), async (req, res) => {
     }
 
     // Return the URL to access the uploaded file
+    // Use relative URL so it works both in development and production
     const avatarUrl = `/api/characters/avatars/${req.file.filename}`;
     console.log('Avatar uploaded successfully:', avatarUrl);
-    res.json({ url: avatarUrl });
+    
+    // Also return the full URL for convenience
+    const baseUrl = process.env.FRONTEND_URL || req.protocol + '://' + req.get('host');
+    const fullUrl = baseUrl + avatarUrl;
+    
+    res.json({ 
+      url: avatarUrl,  // Relative URL for database
+      fullUrl: fullUrl  // Full URL for preview
+    });
   } catch (error) {
     console.error('Error uploading avatar:', error);
     res.status(500).json({ error: 'Failed to upload avatar' });

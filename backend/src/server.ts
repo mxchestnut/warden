@@ -5,6 +5,9 @@ import path from 'path';
 // Use process.cwd() which points to backend/ directory, so ../.env gets the root .env
 dotenv.config({ path: path.join(process.cwd(), '../.env') });
 
+// Validate environment variables before starting server
+import env, { isProduction, isDevelopment } from './config/env';
+
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import express from 'express';
@@ -43,6 +46,9 @@ import { getSecretsWithFallback } from './config/secrets';
 import { reinitializeDatabase, db } from './db';
 import { sql } from 'drizzle-orm';
 import { initializePasswordRotationTracking } from './db/passwordRotation';
+import logger, { logInfo, logError, logWarn } from './utils/logger';
+import { httpLogger } from './middleware/logging';
+import { setupSwagger } from './config/swagger';
 
 // Prevent multiple server starts using global variable
 declare global {
@@ -57,7 +63,7 @@ Sentry.init({
   ],
   // Performance Monitoring
   tracesSampleRate: 1.0, // Capture 100% of transactions
-  // Profiling
+  // Profilingenv.NODE_ENV
   profilesSampleRate: 1.0, // Profile 100% of transactions
   // Environment
   environment: process.env.NODE_ENV || 'development',
@@ -69,16 +75,16 @@ async function startServer() {
 
   // Reinitialize database connection with secret from AWS in production
   // Skip if running locally - we want to use the initial DATABASE_URL from .env
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Production mode detected - loading DATABASE_URL from AWS Secrets Manager');
+  if (isProduction) {
+    logger.info('Production mode detected - loading DATABASE_URL from AWS Secrets Manager');
     await reinitializeDatabase(secrets.DATABASE_URL);
   } else {
-    console.log('Development mode - using database from .env file (loaded at module initialization)');
+    logger.info('Development mode - using database from .env file (loaded at module initialization)');
   }
 
   // Initialize Redis client (optional)
   let redisClient: any = null;
-  const useRedis = process.env.USE_REDIS !== 'false'; // Default to true unless explicitly disabled
+  const useRedis = env.USE_REDIS;
 
   if (useRedis) {
     try {
@@ -91,21 +97,21 @@ async function startServer() {
       });
 
       redisClient.on('error', (err: any) => {
-        console.error('Redis Client Error:', err.message);
+        logError('Redis Client Error', err);
       });
-      redisClient.on('connect', () => console.log('✓ Connected to Redis for session storage'));
+      redisClient.on('connect', () => logInfo('Connected to Redis for session storage'));
 
       await redisClient.connect();
     } catch (error: any) {
-      console.warn('⚠ Redis not available - using in-memory session storage:', error.message);
+      logWarn('Redis not available - using in-memory session storage', error);
       redisClient = null;
     }
   } else {
-    console.log('Redis disabled - using in-memory session storage');
+    logger.info('Redis disabled - using in-memory session storage');
   }
 
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = env.PORT;
 
   // Set Gemini API key as environment variable for Gemini service
   process.env.GEMINI_API_KEY = secrets.GEMINI_API_KEY;
@@ -113,14 +119,17 @@ async function startServer() {
   // Initialize Warden Discord bot
   if (secrets.WARDEN_BOT_TOKEN) {
     initializeDiscordBot(secrets.WARDEN_BOT_TOKEN);
-    console.log('✓ Warden bot initializing...');
+    logger.info('Warden bot initializing...');
   } else {
-    console.error('❗ WARDEN_BOT_TOKEN not available - bot cannot start!');
+    logError('WARDEN_BOT_TOKEN not available - bot cannot start!');
     process.exit(1);
   }
 
   // Trust proxy (nginx)
   app.set('trust proxy', 1);
+
+// HTTP Request Logging (should be early in middleware chain)
+app.use(httpLogger);
 
 // Compression middleware (should be early in the chain)
 app.use(compression({
@@ -157,16 +166,16 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
+  origin: isProduction
     ? ['https://warden.my', 'https://www.warden.my']
-    : 'http://localhost:5173',
+    : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: isProduction ? 100 : 1000, // Higher limit for dev
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -187,7 +196,7 @@ app.use(cookieParser());
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days, refreshed on activity
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'lax',
       domain: undefined,
       path: '/'
@@ -216,7 +225,7 @@ const csrfProtection = doubleCsrf({
   cookieName: 'warden.x-csrf-token',
   cookieOptions: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     sameSite: 'lax',
     domain: undefined,
     path: '/'
@@ -274,6 +283,9 @@ app.use('/api/groups', groupsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/collaboration', collaborationRoutes);
 
+// Swagger API Documentation
+setupSwagger(app);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -284,8 +296,14 @@ const frontendPath = path.join(__dirname, '../../frontend');
 app.use(express.static(frontendPath));
 
 // Serve index.html for all non-API routes (SPA support)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
+// Express 5 compatible fallback route
+app.use((req, res, next) => {
+  // Only serve index.html for non-API routes
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  } else {
+    next();
+  }
 });
 
   // Sentry error handler - must be before other error handlers
@@ -293,7 +311,7 @@ app.get('*', (req, res) => {
 
   // Error handling middleware
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error(err.stack);
+    logger.error({ err, path: req.path, method: req.method, userId: (req.user as any)?.id }, 'Request error');
 
     // Send error to Sentry
     Sentry.captureException(err, {
@@ -308,11 +326,12 @@ app.get('*', (req, res) => {
   });
 
   app.listen(PORT, async () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Secrets loaded from: ${process.env.NODE_ENV === 'production' ? 'AWS Secrets Manager' : '.env file'}`);
+    logger.info({ port: PORT, env: env.NODE_ENV }, 'Server started successfully');
+    logger.info(`Secrets loaded from: ${isProduction ? 'AWS Secrets Manager' : '.env file'}`);
 
     // Initialize password rotation tracking
     await initializePasswordRotationTracking();
+    logger.info('Password rotation tracking initialized');
 
     // Ensure Discord bot tables exist
     try {
@@ -370,9 +389,9 @@ app.get('*', (req, res) => {
         );
       `);
 
-      console.log('✓ Discord bot tables verified');
+      logger.info('Discord bot tables verified and ready');
     } catch (error) {
-      console.error('Error creating Discord bot tables:', error);
+      logError('Error creating Discord bot tables', error as Error);
     }
   });
 }
@@ -381,7 +400,7 @@ app.get('*', (req, res) => {
 if (!global.__SERVER_STARTED__) {
   global.__SERVER_STARTED__ = true;
   startServer().catch(error => {
-    console.error('Failed to start server:', error);
+    logError('Failed to start server', error as Error);
     process.exit(1);
   });
 }

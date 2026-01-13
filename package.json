@@ -1,0 +1,31 @@
+{
+  "name": "warden",
+  "version": "1.0.0",
+  "description": "**Warden** is a comprehensive platform combining Discord bot integration for Pathfinder 1E campaigns with social writing and collaboration features. It features character management, collaborative writing groups, rich text editing with TipTap, and advanced campaign tools - all integrated with PathCompanion.com.",
+  "main": "index.js",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend-src && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mxchestnut/warden.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mxchestnut/warden/issues"
+  },
+  "homepage": "https://github.com/mxchestnut/warden#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.6"
+  }
+}

@@ -43,6 +43,11 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+*.spec.ts.snap
+*.test.ts.snap
 
 # Temporary files
 tmp/

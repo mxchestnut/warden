@@ -1,0 +1,165 @@
+name: Monthly Database Backup Test
+
+on:
+  # Run on the 1st of every month at 2:00 AM UTC
+  schedule:
+    - cron: '0 2 1 * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      cleanup:
+        description: 'Automatically cleanup test branch after verification'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  backup-test:
+    name: Test Database Backup Restoration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Install Neon CLI
+        run: npm install -g neonctl
+
+      - name: Authenticate with Neon
+        run: |
+          echo "${{ secrets.NEON_API_KEY }}" | neonctl auth
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+
+      - name: Make test script executable
+        run: chmod +x scripts/test-backup-restore.sh
+
+      - name: Run backup restoration test
+        id: backup_test
+        run: |
+          if [ "${{ github.event.inputs.cleanup }}" = "true" ]; then
+            ./scripts/test-backup-restore.sh --cleanup
+          else
+            ./scripts/test-backup-restore.sh
+          fi
+        continue-on-error: true
+
+      - name: Read test results
+        id: results
+        run: |
+          LAST_LOG=$(tail -n 1 logs/backup-tests.log)
+          echo "log_entry=$LAST_LOG" >> $GITHUB_OUTPUT
+          
+          if echo "$LAST_LOG" | grep -q "PASSED"; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-test-logs-${{ github.run_number }}
+          path: logs/backup-tests.log
+          retention-days: 90
+
+      - name: Send Discord notification
+        if: always()
+        uses: tsickert/discord-webhook@v6.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          embed-title: "📊 Monthly Database Backup Test"
+          embed-description: |
+            **Status:** ${{ steps.results.outputs.status == 'success' && '✅ Passed' || '❌ Failed' }}
+            **Date:** ${{ steps.results.outputs.log_entry }}
+            
+            [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          embed-color: ${{ steps.results.outputs.status == 'success' && '3066993' || '15158332' }}
+          embed-timestamp: true
+
+      - name: Send Slack notification (alternative)
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "Monthly Database Backup Test ${{ steps.results.outputs.status == 'success' && 'Passed ✅' || 'Failed ❌' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Monthly Database Backup Test*\n\n*Status:* ${{ steps.results.outputs.status == 'success' && '✅ Passed' || '❌ Failed' }}\n*Date:* $(date -u)\n\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Create GitHub Issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `🚨 Database Backup Test Failed - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Database Backup Test Failure
+            
+            The monthly database backup restoration test has failed.
+            
+            **Date:** ${new Date().toUTCString()}
+            **Workflow Run:** [View Details](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            
+            ### Action Required
+            
+            1. Review the test logs in the workflow artifacts
+            2. Manually verify database backups using the [DATABASE_BACKUP.md](../blob/main/DATABASE_BACKUP.md) guide
+            3. Check Neon Console for any issues: https://console.neon.tech/
+            4. Investigate and resolve the root cause
+            5. Close this issue once resolved and verified
+            
+            ### Quick Check
+            
+            \`\`\`bash
+            # Run manual backup test
+            ./scripts/test-backup-restore.sh
+            
+            # Check Neon status
+            curl https://neonstatus.com/api/v2/status.json
+            \`\`\`
+            
+            ### Resources
+            
+            - [Database Backup Documentation](../blob/main/DATABASE_BACKUP.md)
+            - [Neon Support](mailto:support@neon.tech)
+            - [Neon Status Page](https://neonstatus.com/)
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['database', 'backup', 'critical', 'automated']
+            });
+
+      - name: Fail workflow if test failed
+        if: steps.backup_test.outcome == 'failure'
+        run: exit 1

@@ -52,6 +52,64 @@ function decryptPassword(encryptedPassword: string): string {
   return decrypted;
 }
 
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Register a new user account
+ *     description: Create a new Warden account with username, email, and password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *               - email
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 50
+ *                 example: aragorn
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Must contain uppercase, lowercase, number, and special character
+ *                 example: MySecureP@ss123
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: aragorn@warden.my
+ *     responses:
+ *       201:
+ *         description: Account created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Account created successfully
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid input or username/email already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Too many registration attempts (max 20/hour per IP)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Register
 router.post('/register', registerLimiter, async (req, res) => {
   try {
@@ -113,6 +171,61 @@ router.post('/register', registerLimiter, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Login with username and password
+ *     description: Authenticate and create a session. Returns session cookie.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: aragorn
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: MySecureP@ss123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         headers:
+ *           Set-Cookie:
+ *             description: Session cookie
+ *             schema:
+ *               type: string
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Too many login attempts (max 5 per 15 minutes)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Login
 router.post('/login', loginLimiter, (req, res, next) => {
   passport.authenticate('local', (err: any, user: any, info: any) => {
@@ -252,6 +365,19 @@ router.post('/logout-all-devices', isAuthenticated, async (req, res) => {
 
 // Get current user
 router.get('/me', (req, res) => {
+  // DEVELOPMENT ONLY: Mock user response when auth is disabled
+  if (process.env.NODE_ENV !== 'production' && process.env.DISABLE_AUTH === 'true') {
+    return res.json({
+      user: {
+        id: 1,
+        username: 'dev-user',
+        isAdmin: true,
+        pathCompanionConnected: false,
+        pathCompanionUsername: null
+      }
+    });
+  }
+
   console.log('GET /me - Cookies received:', req.headers.cookie);
   console.log('GET /me - Session ID:', req.sessionID);
   console.log('GET /me - Session:', req.session);

@@ -1,103 +1,207 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Home } from './pages/Home';
-import { Groups } from './pages/Groups';
-import { GroupPage } from './pages/GroupPage';
-import { Documents } from './pages/Documents';
-import { DocumentEditor } from './pages/DocumentEditor';
-import { Characters } from './pages/Characters';
-import { Login } from './pages/Login';
-import { Studio } from './pages/Studio';
-import './App.css';
+import { useState, useEffect, lazy, Suspense } from 'react'
+import { Loader2 } from 'lucide-react'
+import { ToastContainer } from './components/Toast'
+import './App.css'
+import { ChatManager } from './components/ChatManager'
+import { ChatLauncher } from './components/ChatLauncher'
+import { ChatBar } from './components/ChatBar'
+import { authService } from './services/auth'
 
-function Navigation() {
-  const location = useLocation();
-  const [user, setUser] = useState<any>(null);
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen" style={{ backgroundColor: '#37322E' }}>
+    <div className="flex flex-col items-center gap-4">
+      <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#B34B0C' }} />
+      <p className="text-white">Loading...</p>
+    </div>
+  </div>
+)
 
-  useEffect(() => {
-    // Check if user is logged in
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data))
-      .catch(() => setUser(null));
-  }, []);
-
-  const isActive = (path: string) => location.pathname.startsWith(path);
-
-  return (
-    <nav className="main-nav">
-      <div className="nav-container">
-        <div className="nav-brand">
-          <Link to="/">
-            <h1>⚔️ Warden</h1>
-          </Link>
-          <p className="tagline">Social Writing & Roleplay Platform</p>
-        </div>
-
-        <div className="nav-links">
-          <Link to="/" className={isActive('/') && location.pathname === '/' ? 'active' : ''}>
-            Home
-          </Link>
-          <Link to="/groups" className={isActive('/groups') ? 'active' : ''}>
-            Groups
-          </Link>
-          <Link to="/studio" className={isActive('/studio') ? 'active' : ''}>
-            Studio
-          </Link>
-          <Link to="/documents" className={isActive('/documents') ? 'active' : ''}>
-            Documents
-          </Link>
-          <Link to="/characters" className={isActive('/characters') ? 'active' : ''}>
-            Characters
-          </Link>
-        </div>
-
-        <div className="nav-actions">
-          {user ? (
-            <div className="user-menu">
-              <span className="user-name">👤 {user.username}</span>
-              <button onClick={() => {
-                fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
-                  .then(() => window.location.reload());
-              }} className="btn-secondary">
-                Logout
-              </button>
-            </div>
-          ) : (
-            <Link to="/login" className="btn-primary">
-              Login
-            </Link>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
-}
+// Lazy load pages for optimal code splitting
+const Home = lazy(() => import('./pages/Home'))
+const Feed = lazy(() => import('./pages/Feed'))
+const Groups = lazy(() => import('./pages/Groups'))
+const Studio = lazy(() => import('./pages/Studio').then(module => ({ default: module.Studio })))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const ProfileSettings = lazy(() => import('./pages/ProfileSettings').then(module => ({ default: module.ProfileSettings })))
+const Bookshelf = lazy(() => import('./pages/Bookshelf'))
+const Characters = lazy(() => import('./pages/Characters').then(module => ({ default: module.Characters })))
+const CharacterEdit = lazy(() => import('./pages/CharacterEdit'))
+const BetaMarketplace = lazy(() => import('./pages/BetaMarketplace'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback').then(module => ({ default: module.AuthCallback })))
+const TermsOfService = lazy(() => import('./pages/TermsOfService'))
+const HouseRules = lazy(() => import('./pages/HouseRules'))
+const Invite = lazy(() => import('./pages/Invite'))
+const PendingApproval = lazy(() => import('./pages/PendingApproval'))
+const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })))
 
 function App() {
+  const [currentPage, setCurrentPage] = useState<'home' | 'feed' | 'groups' | 'profile-settings' | 'studio' | 'dashboard' | 'bookshelf' | 'characters' | 'character-edit' | 'beta-marketplace' | 'auth-callback' | 'terms' | 'rules' | 'invite' | 'pending-approval' | 'login'>('home')
+
+  useEffect(() => {
+    // Check authentication and route
+    const checkRoute = async () => {
+      const path = window.location.pathname
+      
+      // Try to load user first
+      await authService.getCurrentUser()
+      const isAuthenticated = authService.isAuthenticated()
+
+      // Public pages that don't require authentication
+      const publicPaths = new Set<string>([
+        '/', 
+        '', 
+        '/legal/terms', 
+        '/legal/rules',
+        '/pending-approval',
+        '/login'
+      ])
+      
+      // Always allowed (even when not authenticated)
+      const alwaysAllowed = new Set<string>(['/auth/callback'])
+
+      // Check if current path is public
+      const isPublicPath = publicPaths.has(path) || 
+                          path.startsWith('/invite/') || 
+                          alwaysAllowed.has(path)
+
+      if (!isAuthenticated && !isPublicPath) {
+        // Redirect unauthenticated users to login for private routes
+        if (path !== '/login') {
+          window.location.href = '/login'
+          return
+        }
+      }
+
+      // Route to correct page
+      if (path === '/auth/callback') {
+        setCurrentPage('auth-callback')
+      } else if (path === '/legal/terms') {
+        setCurrentPage('terms')
+      } else if (path === '/legal/rules') {
+        setCurrentPage('rules')
+      } else if (path === '/feed') {
+        setCurrentPage('feed')
+      } else if (path === '/groups') {
+        setCurrentPage('groups')
+      } else if (path === '/me' || path === '/profile' || path === '/settings') {
+        setCurrentPage('profile-settings')
+      } else if (path === '/studio') {
+        setCurrentPage('studio')
+      } else if (path === '/dashboard') {
+        setCurrentPage('dashboard')
+      } else if (path === '/bookshelf' || path === '/books') {
+        setCurrentPage('bookshelf')
+      } else if (path === '/characters') {
+        setCurrentPage('characters')
+      } else if (path.startsWith('/characters/') && (path.endsWith('/edit') || path.includes('/new'))) {
+        setCurrentPage('character-edit')
+      } else if (path === '/beta-marketplace') {
+        setCurrentPage('beta-marketplace')
+      } else if (path.startsWith('/invite/')) {
+        setCurrentPage('invite')
+      } else if (path === '/pending-approval') {
+        setCurrentPage('pending-approval')
+      } else if (path === '/login') {
+        setCurrentPage('login')
+      } else if (path === '/' || path === '') {
+        setCurrentPage('home')
+      } else {
+        // Unknown route - redirect to home
+        window.location.href = '/'
+      }
+    }
+    
+    // Run on mount
+    checkRoute()
+    
+    // Listen for navigation events (back/forward buttons)
+    window.addEventListener('popstate', checkRoute)
+    
+    return () => {
+      window.removeEventListener('popstate', checkRoute)
+    }
+  }, [])
+
+  const renderContent = () => {
+    // Handle pages
+    if (currentPage === 'auth-callback') {
+      return <AuthCallback />
+    }
+    
+    if (currentPage === 'terms') {
+      return <TermsOfService />
+    }
+    
+    if (currentPage === 'rules') {
+      return <HouseRules />
+    }
+    
+    if (currentPage === 'invite') {
+      return <Invite />
+    }
+    
+    if (currentPage === 'pending-approval') {
+      return <PendingApproval />
+    }
+    
+    if (currentPage === 'login') {
+      return <Login />
+    }
+    
+    if (currentPage === 'feed') {
+      return <Feed />
+    }
+    
+    if (currentPage === 'groups') {
+      return <Groups />
+    }
+    
+    if (currentPage === 'profile-settings') {
+      return <ProfileSettings />
+    }
+    
+    if (currentPage === 'studio') {
+      return <Studio />
+    }
+    
+    if (currentPage === 'dashboard') {
+      return <Dashboard />
+    }
+    
+    if (currentPage === 'bookshelf') {
+      return <Bookshelf />
+    }
+
+    if (currentPage === 'characters') {
+      return <Characters />
+    }
+
+    if (currentPage === 'character-edit') {
+      return <CharacterEdit />
+    }
+
+    if (currentPage === 'beta-marketplace') {
+      return <BetaMarketplace />
+    }
+
+    // Home page
+    return <Home />
+  }
+
+  // Wrap everything in Suspense for lazy loading
   return (
-    <BrowserRouter>
-      <div className="app">
-        <Navigation />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/groups" element={<Groups />} />
-            <Route path="/groups/:slug" element={<GroupPage />} />
-            <Route path="/studio" element={<Studio />} />
-            <Route path="/documents" element={<Documents />} />
-            <Route path="/documents/:id" element={<DocumentEditor />} />
-            <Route path="/documents/new" element={<DocumentEditor />} />
-            <Route path="/characters" element={<Characters />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </main>
-        <footer className="main-footer">
-          <p>© 2026 Warden - Social Writing & Roleplay Platform</p>
-        </footer>
-      </div>
-    </BrowserRouter>
-  );
+    <>
+      <Suspense fallback={<PageLoader />}>
+        {renderContent()}
+      </Suspense>
+      {/* Global chat UI */}
+      <ChatManager />
+      <ChatLauncher />
+      <ChatBar />
+      <ToastContainer />
+    </>
+  )
 }
 
-export default App;
+export default App
