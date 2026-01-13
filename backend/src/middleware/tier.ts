@@ -19,7 +19,7 @@ export function requireRpTier(req: Request, res: Response, next: NextFunction) {
  * Helper function to check if a user has access to features
  * Always returns true for authenticated users (no tier restrictions)
  */
-export function hasRpTier(user: { subscriptionTier?: string; isAdmin?: boolean }): boolean {
+export function hasRpTier(_user: { subscriptionTier?: string; isAdmin?: boolean }): boolean {
   return true; // All users have access
 }
 
@@ -48,6 +48,6 @@ export async function getUserTierFromDiscord(db: any, discordUserId: string): Pr
  * Check if a Discord guild has access to features
  * Returns true for all guilds (no premium restrictions)
  */
-export async function checkGuildPremiumAccess(db: any, guild: any): Promise<{ hasAccess: boolean; reason?: string }> {
+export async function checkGuildPremiumAccess(_db: any, _guild: any): Promise<{ hasAccess: boolean; reason?: string }> {
   return { hasAccess: true }; // All guilds have access
 }

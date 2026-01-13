@@ -41,7 +41,7 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
       // Test if session is still valid
       await PlayFabService.getUserData(user.pathCompanionSessionTicket);
       return user.pathCompanionSessionTicket;
-    } catch (error) {
+    } catch {
       // Session expired, continue to refresh
     }
   }
@@ -918,7 +918,7 @@ router.post('/link/:id', isAuthenticated, async (req, res) => {
     try {
       const decoded = Buffer.from(characterKey, 'base64').toString('utf-8');
       keyData = JSON.parse(decoded);
-    } catch (error) {
+    } catch {
       return res.status(400).json({ error: 'Invalid character key format' });
     }
 

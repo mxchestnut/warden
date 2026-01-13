@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User, Edit2, Save, X, Link as LinkIcon, Settings as SettingsIcon } from 'lucide-react'
+import { Link as LinkIcon } from 'lucide-react'
 import { authService } from '../services/auth'
 import { Navigation } from '../components/Navigation'
 

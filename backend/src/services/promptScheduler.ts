@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { db } from '../db/index.js';
 import { botSettings, prompts } from '../db/schema.js';
-import { eq, and, lt, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { Client, TextChannel } from 'discord.js';
 
 let schedulerStarted = false;

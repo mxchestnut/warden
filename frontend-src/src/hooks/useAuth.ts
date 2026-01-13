@@ -24,14 +24,10 @@ export const useAuth = () => {
   }, []);
 
   const login = async (username: string, password: string) => {
-    try {
-      const user = await authService.login(username, password);
-      setIsAuthenticated(true);
-      setUser(user);
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    const user = await authService.login(username, password);
+    setIsAuthenticated(true);
+    setUser(user);
+    return user;
   };
 
   const logout = async () => {
@@ -45,7 +41,7 @@ export const useAuth = () => {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       setIsAuthenticated(true);
-    } catch (error) {
+    } catch {
       setIsAuthenticated(false);
       setUser(null);
     }

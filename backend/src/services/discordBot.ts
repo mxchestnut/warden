@@ -689,7 +689,7 @@ async function handleProfile(message: Message, args: string[]) {
     if (typeof skills === 'string') {
       try {
         skills = JSON.parse(skills);
-      } catch (e) {
+      } catch {
         // Silent fail - will show "no data" message
       }
     }

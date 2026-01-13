@@ -1,6 +1,6 @@
 import express from 'express';
 import { db } from '../db';
-import { characterMemories, characterSheets } from '../db/schema';
+import { characterMemories } from '../db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 

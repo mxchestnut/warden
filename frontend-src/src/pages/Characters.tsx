@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigation } from '../components/Navigation'
 import { authService, User } from '../services/auth'
-import { Plus, User as UserIcon, Link as LinkIcon, Trash2, Edit, ExternalLink, Search, ArrowUpDown } from 'lucide-react'
+import { Plus, User as UserIcon, Link as LinkIcon, Trash2, Edit, Search, ArrowUpDown } from 'lucide-react'
 
 interface Character {
   id: number

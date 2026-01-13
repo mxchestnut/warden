@@ -1,7 +1,5 @@
 import PlayFab from 'playfab-sdk/Scripts/PlayFab/PlayFab';
 import PlayFabClient from 'playfab-sdk/Scripts/PlayFab/PlayFabClient';
-// @ts-ignore - PlayFab SDK doesn't have full TypeScript definitions
-import PlayFabServer from 'playfab-sdk/Scripts/PlayFab/PlayFabServer';
 import * as zlib from 'zlib';
 import axios from 'axios';
 

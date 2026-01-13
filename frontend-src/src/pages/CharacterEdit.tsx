@@ -794,7 +794,7 @@ export function CharacterEdit() {
                   const skills = character.skills ? JSON.parse(character.skills) : {}
                   const skillData = skills[skillName]
                   skillBonus = skillData?.total || 0
-                } catch (e) {
+                } catch {
                   // If parsing fails, default to 0
                 }
                 

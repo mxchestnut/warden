@@ -10,7 +10,6 @@ import {
   LogIn,
   LogOut,
   Home,
-  BookMarked,
   PenTool,
   ShoppingBag,
   UserCircle,

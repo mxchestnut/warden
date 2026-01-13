@@ -1,6 +1,6 @@
 import pinoHttp from 'pino-http';
 import logger from '../utils/logger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 
 /**
  * HTTP Request Logging Middleware using Pino-HTTP

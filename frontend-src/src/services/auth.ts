@@ -107,7 +107,7 @@ class AuthService {
 
       this.user = await response.json()
       return this.user
-    } catch (error) {
+    } catch {
       this.user = null
       return null
     }

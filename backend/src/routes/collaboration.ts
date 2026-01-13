@@ -1,7 +1,7 @@
 import express from 'express';
 import { db } from '../db';
 import { documentCollaborators, documents, documentVersions, users } from '../db/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 
 const router = express.Router();

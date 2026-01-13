@@ -6,7 +6,7 @@ import path from 'path';
 dotenv.config({ path: path.join(process.cwd(), '../.env') });
 
 // Validate environment variables before starting server
-import env, { isProduction, isDevelopment } from './config/env';
+import env, { isProduction } from './config/env';
 
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
@@ -310,7 +310,7 @@ app.use((req, res, next) => {
   Sentry.setupExpressErrorHandler(app);
 
   // Error handling middleware
-  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     logger.error({ err, path: req.path, method: req.method, userId: (req.user as any)?.id }, 'Request error');
 
     // Send error to Sentry

@@ -4,7 +4,7 @@ import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { db } from '../db';
 import { documents } from '../db/schema';
-import { eq, and, or, isNull } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 import { s3Client, BUCKET_NAME } from '../config/s3';
 import { randomBytes } from 'crypto';

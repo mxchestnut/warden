@@ -1,6 +1,6 @@
 import express from 'express';
 import { db } from '../db';
-import { groups, groupMembers, groupPosts, groupPostReplies, groupInvitations } from '../db/schema';
+import { groups, groupMembers, groupPosts } from '../db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 
