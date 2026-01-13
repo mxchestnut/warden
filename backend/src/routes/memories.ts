@@ -18,7 +18,7 @@ router.get('/:characterId/memories', isAuthenticated, async (req, res) => {
       createdAt: characterMemories.createdAt
     })
       .from(characterMemories)
-      .where(eq(characterMemories.characterId, parseInt(characterId)))
+      .where(eq(characterMemories.characterId, parseInt(characterId as string)))
       .orderBy(desc(characterMemories.createdAt));
 
     res.json(memories);
@@ -39,7 +39,7 @@ router.post('/:characterId/memories', isAuthenticated, async (req, res) => {
     }
 
     const [newMemory] = await db.insert(characterMemories).values({
-      characterId: parseInt(characterId),
+      characterId: parseInt(characterId as string),
       guildId: guildId || '',
       memory,
       addedBy: 'portal' // Indicate it was added via portal
@@ -58,7 +58,7 @@ router.delete('/memories/:memoryId', isAuthenticated, async (req, res) => {
     const { memoryId } = req.params;
 
     await db.delete(characterMemories)
-      .where(eq(characterMemories.id, parseInt(memoryId)));
+      .where(eq(characterMemories.id, parseInt(memoryId as string)));
 
     res.json({ success: true });
   } catch (error) {
@@ -79,7 +79,7 @@ router.put('/memories/:memoryId', isAuthenticated, async (req, res) => {
 
     const [updated] = await db.update(characterMemories)
       .set({ memory })
-      .where(eq(characterMemories.id, parseInt(memoryId)))
+      .where(eq(characterMemories.id, parseInt(memoryId as string)))
       .returning();
 
     res.json(updated);

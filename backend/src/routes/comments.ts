@@ -62,7 +62,7 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const commentId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.id as string);
     const { content, contentHtml } = req.body;
 
     // Check if user owns the comment
@@ -93,7 +93,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const commentId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.id as string);
 
     // Check if user owns the comment
     const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
@@ -117,7 +117,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 // Resolve/unresolve a comment
 router.patch('/:id/resolve', isAuthenticated, async (req, res) => {
   try {
-    const commentId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.id as string);
     const { isResolved } = req.body;
 
     const [updatedComment] = await db.update(comments).set({
@@ -135,7 +135,7 @@ router.patch('/:id/resolve', isAuthenticated, async (req, res) => {
 router.post('/:id/react', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const commentId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.id as string);
     const { reactionType } = req.body;
 
     if (!reactionType) {
@@ -175,7 +175,7 @@ router.post('/:id/react', isAuthenticated, async (req, res) => {
 // Get reactions for a comment
 router.get('/:id/reactions', async (req, res) => {
   try {
-    const commentId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.id as string);
 
     const reactions = await db
       .select()

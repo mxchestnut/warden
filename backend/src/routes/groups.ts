@@ -115,7 +115,7 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
     const { name, description, isPublic, tags, rules, avatarUrl, bannerUrl } = req.body;
 
     // Check if user is owner or moderator
@@ -150,7 +150,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
 router.post('/:id/join', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
 
     // Check if group exists and is public
     const [group] = await db.select().from(groups).where(eq(groups.id, groupId));
@@ -194,7 +194,7 @@ router.post('/:id/join', isAuthenticated, async (req, res) => {
 router.post('/:id/leave', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
 
     // Check if user is member
     const [membership] = await db
@@ -227,7 +227,7 @@ router.post('/:id/leave', isAuthenticated, async (req, res) => {
 // Get group members
 router.get('/:id/members', async (req, res) => {
   try {
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
 
     const members = await db
       .select({
@@ -251,7 +251,7 @@ router.get('/:id/members', async (req, res) => {
 // Get group posts
 router.get('/:id/posts', async (req, res) => {
   try {
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
 
     const posts = await db
       .select()
@@ -270,7 +270,7 @@ router.get('/:id/posts', async (req, res) => {
 router.post('/:id/posts', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const groupId = parseInt(req.params.id);
+    const groupId = parseInt(req.params.id as string);
     const { title, content, contentHtml } = req.body;
 
     // Check if user is member

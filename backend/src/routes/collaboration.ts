@@ -9,7 +9,7 @@ const router = express.Router();
 // Get collaborators for a document
 router.get('/document/:documentId', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
+    const documentId = parseInt(req.params.documentId as string);
     const userId = (req.user as any).id;
 
     // Check if user has access to the document
@@ -52,7 +52,7 @@ router.get('/document/:documentId', isAuthenticated, async (req, res) => {
 // Add a collaborator to a document
 router.post('/document/:documentId/collaborators', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
+    const documentId = parseInt(req.params.documentId as string);
     const inviterId = (req.user as any).id;
     const { userId, role, canEdit, canComment } = req.body;
 
@@ -101,8 +101,8 @@ router.post('/document/:documentId/collaborators', isAuthenticated, async (req, 
 // Update collaborator permissions
 router.patch('/document/:documentId/collaborators/:collaboratorId', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
-    const collaboratorId = parseInt(req.params.collaboratorId);
+    const documentId = parseInt(req.params.documentId as string);
+    const collaboratorId = parseInt(req.params.collaboratorId as string);
     const userId = (req.user as any).id;
     const { role, canEdit, canComment } = req.body;
 
@@ -137,8 +137,8 @@ router.patch('/document/:documentId/collaborators/:collaboratorId', isAuthentica
 // Remove a collaborator
 router.delete('/document/:documentId/collaborators/:collaboratorId', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
-    const collaboratorId = parseInt(req.params.collaboratorId);
+    const documentId = parseInt(req.params.documentId as string);
+    const collaboratorId = parseInt(req.params.collaboratorId as string);
     const userId = (req.user as any).id;
 
     // Check if user owns the document
@@ -163,7 +163,7 @@ router.delete('/document/:documentId/collaborators/:collaboratorId', isAuthentic
 // Get document versions
 router.get('/document/:documentId/versions', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
+    const documentId = parseInt(req.params.documentId as string);
     const userId = (req.user as any).id;
 
     // Check if user has access to the document
@@ -200,7 +200,7 @@ router.get('/document/:documentId/versions', isAuthenticated, async (req, res) =
 // Create a new document version
 router.post('/document/:documentId/versions', isAuthenticated, async (req, res) => {
   try {
-    const documentId = parseInt(req.params.documentId);
+    const documentId = parseInt(req.params.documentId as string);
     const userId = (req.user as any).id;
     const { content, contentHtml, title, changeSummary } = req.body;
 

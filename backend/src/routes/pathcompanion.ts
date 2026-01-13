@@ -586,7 +586,7 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const userId = user.id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
 
     // Get the character sheet
     const [sheet] = await db.select().from(characterSheets).where(
@@ -893,7 +893,7 @@ router.post('/link/:id', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const userId = user.id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
     const { characterKey } = req.body;
 
     if (!characterKey) {
@@ -969,7 +969,7 @@ router.post('/link/:id', isAuthenticated, async (req, res) => {
 router.post('/export/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
     const user = req.user as any;
 
     if (!user.pathCompanionSessionTicket) {

@@ -133,7 +133,7 @@ router.put('/prompts/:id', isAuthenticated, async (req, res) => {
 
     const [updated] = await db.update(prompts)
       .set({ category, promptText })
-      .where(eq(prompts.id, parseInt(id)))
+      .where(eq(prompts.id, parseInt(id as string)))
       .returning();
 
     if (!updated) {
@@ -153,7 +153,7 @@ router.delete('/prompts/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
 
     await db.delete(prompts)
-      .where(eq(prompts.id, parseInt(id)));
+      .where(eq(prompts.id, parseInt(id as string)));
 
     res.json({ success: true });
   } catch (error) {
@@ -267,7 +267,7 @@ router.put('/tropes/:id', isAuthenticated, async (req, res) => {
 
     const [updated] = await db.update(tropes)
       .set({ category, name, description })
-      .where(eq(tropes.id, parseInt(id)))
+      .where(eq(tropes.id, parseInt(id as string)))
       .returning();
 
     if (!updated) {
@@ -287,7 +287,7 @@ router.delete('/tropes/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
 
     await db.delete(tropes)
-      .where(eq(tropes.id, parseInt(id)));
+      .where(eq(tropes.id, parseInt(id as string)));
 
     res.json({ success: true });
   } catch (error) {
@@ -339,7 +339,7 @@ router.delete('/prompts/schedule/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
 
     await db.delete(promptSchedule)
-      .where(eq(promptSchedule.id, parseInt(id)));
+      .where(eq(promptSchedule.id, parseInt(id as string)));
 
     res.json({ success: true });
   } catch (error) {

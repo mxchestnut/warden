@@ -289,7 +289,7 @@ router.get('/', isAuthenticated, async (req, res) => {
 router.get('/:id/download', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
-    const fileId = parseInt(req.params.id);
+    const fileId = parseInt(req.params.id as string);
     if (isNaN(fileId) || fileId < 1) {
       return res.status(400).json({ error: 'Invalid file ID' });
     }
@@ -331,7 +331,7 @@ router.get('/:id/download', isAuthenticated, async (req, res) => {
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
-    const fileId = parseInt(req.params.id);
+    const fileId = parseInt(req.params.id as string);
     if (isNaN(fileId) || fileId < 1) {
       return res.status(400).json({ error: 'Invalid file ID' });
     }

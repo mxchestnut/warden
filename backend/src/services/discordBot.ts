@@ -2948,9 +2948,9 @@ async function handleLore(message: Message, args: string[]) {
         .setTimestamp();
 
       for (const [tag, tagEntries] of Object.entries(byTag)) {
-        const tagList = tagEntries.map(e => `**${e.id}.** ${e.content.substring(0, 100)}${e.content.length > 100 ? '...' : ''}`).join('\n');
+        const tagList = (tagEntries as any[]).map(e => `**${e.id}.** ${e.content.substring(0, 100)}${e.content.length > 100 ? '...' : ''}`).join('\n');
         embed.addFields({
-          name: `${tag} (${tagEntries.length})`,
+          name: `${tag} (${(tagEntries as any[]).length})`,
           value: tagList.substring(0, 1024),
           inline: false
         });

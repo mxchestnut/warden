@@ -14,14 +14,14 @@ router.get('/guild/:guildId', isAuthenticated, async (req, res) => {
 
     let query = db.select()
       .from(loreEntries)
-      .where(eq(loreEntries.guildId, guildId))
+      .where(eq(loreEntries.guildId, guildId as string))
       .orderBy(desc(loreEntries.createdAt));
 
     if (tag) {
       query = db.select()
         .from(loreEntries)
         .where(and(
-          eq(loreEntries.guildId, guildId),
+          eq(loreEntries.guildId, guildId as string),
           eq(loreEntries.tag, tag as string)
         ))
         .orderBy(desc(loreEntries.createdAt));
@@ -113,7 +113,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     const { id } = req.params;
 
     await db.delete(loreEntries)
-      .where(eq(loreEntries.id, parseInt(id)));
+      .where(eq(loreEntries.id, parseInt(id as string)));
 
     res.json({ success: true });
   } catch (error) {

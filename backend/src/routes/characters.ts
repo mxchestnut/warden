@@ -131,7 +131,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
 
     const [sheet] = await db.select().from(characterSheets).where(
       and(
@@ -283,7 +283,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
 
     // Verify ownership
     const [existing] = await db.select().from(characterSheets).where(
@@ -529,7 +529,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
 
     // Verify ownership
     const [existing] = await db.select().from(characterSheets).where(
@@ -603,7 +603,7 @@ router.post('/:id/roll', async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const username = (req.user as any).username;
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
     const { stat, rollType, skillName } = req.body;
     // stat: 'strength', 'dexterity', etc.
     // rollType: 'ability', 'save', 'skill', 'attack', 'advantage', 'disadvantage'
@@ -722,7 +722,7 @@ router.post('/:id/roll', async (req, res) => {
 // Sync/refresh PathCompanion data for an already-linked character
 router.post('/:id/sync-pathcompanion', async (req, res) => {
   try {
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
     const userId = (req.user as any).id;
 
     // Get the character sheet
@@ -853,7 +853,7 @@ router.post('/:id/sync-pathcompanion', async (req, res) => {
 // Link an existing character to PathCompanion and sync data
 router.post('/:id/link-pathcompanion', async (req, res) => {
   try {
-    const sheetId = parseInt(req.params.id);
+    const sheetId = parseInt(req.params.id as string);
     const { pathCompanionCharacterId } = req.body;
     const userId = (req.user as any).id;
 
@@ -1058,7 +1058,7 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
 // Toggle character public status
 router.patch('/:id/public', isAuthenticated, async (req, res) => {
   try {
-    const characterId = parseInt(req.params.id);
+    const characterId = parseInt(req.params.id as string);
     const { isPublic } = req.body;
     const userId = (req.user as any).id;
 
@@ -1117,7 +1117,7 @@ router.patch('/:id/public', isAuthenticated, async (req, res) => {
 // Generate Discord markdown for character
 router.get('/:id/discord-markdown', isAuthenticated, async (req, res) => {
   try {
-    const characterId = parseInt(req.params.id);
+    const characterId = parseInt(req.params.id as string);
     const userId = (req.user as any).id;
 
     // Verify ownership
