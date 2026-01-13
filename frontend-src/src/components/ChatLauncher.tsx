@@ -76,7 +76,6 @@ export function ChatLauncher() {
     return () => {
       client.off(matrix.RoomEvent.Timeline, onTimeline)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, isReady])
 
   // Listen for global toggle events from ChatBar

@@ -113,7 +113,9 @@ export function initializeDiscordBot(token: string) {
         if (alreadyProcessed) {
           return;
         }
-      } catch {}
+      } catch {
+        // Message not fetchable - ignore
+      }
     }
 
     // Handle all commands in one unified handler
@@ -121,7 +123,11 @@ export function initializeDiscordBot(token: string) {
 
     // Mark command message as processed to avoid duplicate handling across restarts
     if (isCommand) {
-      try { await message.react('✅'); } catch {}
+      try {
+        await message.react('✅');
+      } catch {
+        // Reaction not allowed - ignore
+      }
     }
   });
 
