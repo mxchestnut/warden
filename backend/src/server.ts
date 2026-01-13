@@ -145,6 +145,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      upgradeInsecureRequests: null, // Disable HTTPS upgrade for HTTP access
     },
   },
   // Disable HSTS for HTTP access (no SSL certificate on EC2)
