@@ -143,7 +143,7 @@ export function CharacterEdit() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const API_URL = import.meta.env.VITE_API_URL || ''
   const pathParts = window.location.pathname.split('/')
   const characterId = pathParts[2] !== 'new' ? parseInt(pathParts[2]) : null
   const isNew = !characterId

@@ -40,7 +40,7 @@ export default function ModerationLog({ groupId }: ModerationLogProps) {
       }
       
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/group-admin/groups/${groupId}/audit-log?${params}`,
+        `${import.meta.env.VITE_API_URL || ''}/group-admin/groups/${groupId}/audit-log?${params}`,
         { 
           credentials: 'include'
         }

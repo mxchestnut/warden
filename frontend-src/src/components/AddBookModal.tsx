@@ -58,7 +58,7 @@ export default function AddBookModal({ isOpen, onClose, onBookAdded }: AddBookMo
     rating: '',
   })
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://warden.my'
+  const API_URL = import.meta.env.VITE_API_URL || ''
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return

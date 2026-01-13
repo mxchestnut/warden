@@ -14,7 +14,7 @@ export interface User {
   discordUserId?: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 class AuthService {
   private user: User | null = null

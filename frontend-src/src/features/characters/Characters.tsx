@@ -59,7 +59,7 @@ export function Characters() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('recent')
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const API_URL = import.meta.env.VITE_API_URL || ''
 
   useEffect(() => {
     loadData()

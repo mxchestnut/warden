@@ -45,7 +45,7 @@ export default function InviteMembersModal({ groupId, onClose, onInviteSent }: I
       // Send invitations one by one
       const results = await Promise.allSettled(
         emailList.map(email =>
-          fetch(`${import.meta.env.VITE_API_URL}/group-admin/groups/${groupId}/invitations`, {
+          fetch(`${import.meta.env.VITE_API_URL || ''}/group-admin/groups/${groupId}/invitations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

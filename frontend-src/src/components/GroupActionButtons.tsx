@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import { UserPlus, UserCheck, Heart, Users } from 'lucide-react'
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://warden.my'
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 interface GroupActionButtonsProps {
   groupId: number

@@ -49,7 +49,7 @@ export default function NotificationBell() {
   const loadNotifications = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/notifications?limit=10`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/notifications?limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -69,7 +69,7 @@ export default function NotificationBell() {
   const markAsRead = async (notificationId: number) => {
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/v1/notifications/${notificationId}/read`, {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -91,7 +91,7 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/v1/notifications/read-all`, {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/notifications/read-all`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,7 +112,7 @@ export default function NotificationBell() {
   const deleteNotification = async (notificationId: number) => {
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/v1/notifications/${notificationId}`, {
+      await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
