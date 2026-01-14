@@ -63,7 +63,11 @@ export function ProfileSettings() {
   // Copy state
   const [copied, setCopied] = useState(false)
 
-  // Removed Discord bot state - no longer needed
+  // Discord connection code state
+  const [discordCode, setDiscordCode] = useState<string | null>(null)
+  const [discordCodeExpiry, setDiscordCodeExpiry] = useState<Date | null>(null)
+  const [generatingCode, setGeneratingCode] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
 
   useEffect(() => {
     loadUserData()
@@ -173,6 +177,39 @@ export function ProfileSettings() {
       }
     } else {
       console.error('No account code available to copy')
+    }
+  }
+
+  const generateDiscordCode = async () => {
+    try {
+      setGeneratingCode(true)
+      setError(null)
+      
+      const response = await fetch('/api/auth/generate-discord-code', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate Discord connection code')
+      }
+
+      const data = await response.json()
+      setDiscordCode(data.code)
+      setDiscordCodeExpiry(new Date(data.expiresAt))
+      setCodeCopied(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate code')
+    } finally {
+      setGeneratingCode(false)
+    }
+  }
+
+  const copyDiscordCode = () => {
+    if (discordCode) {
+      navigator.clipboard.writeText(discordCode)
+      setCodeCopied(true)
+      setTimeout(() => setCodeCopied(false), 2000)
     }
   }
 
@@ -588,6 +625,102 @@ export function ProfileSettings() {
                   Use this ID in Discord to sync your profile with the Warden bot
                 </p>
               </div>
+
+              {/* Discord Connection Code */}
+              <div style={{ marginTop: '2rem' }}>
+                <label style={{ display: 'block', color: '#D1CFC9', fontWeight: '500', marginBottom: '0.5rem' }}>
+                  Discord Connection Code
+                </label>
+                <p style={{ color: '#B3B2B0', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                  Generate a temporary code to link your Discord account using <code style={{ 
+                    backgroundColor: '#2F2A26',
+                    padding: '0.125rem 0.375rem',
+                    borderRadius: '0.25rem',
+                    color: '#B34B0C'
+                  }}>!connect CODE</code> in Discord.
+                </p>
+                
+                {!discordCode ? (
+                  <button
+                    onClick={generateDiscordCode}
+                    disabled={generatingCode}
+                    style={{
+                      backgroundColor: '#B34B0C',
+                      color: 'white',
+                      padding: '0.75rem 1.5rem',
+                      borderRadius: '0.5rem',
+                      border: 'none',
+                      cursor: generatingCode ? 'not-allowed' : 'pointer',
+                      opacity: generatingCode ? 0.5 : 1,
+                      fontWeight: '500'
+                    }}
+                  >
+                    {generatingCode ? 'Generating...' : 'Generate Connection Code'}
+                  </button>
+                ) : (
+                  <div style={{
+                    backgroundColor: '#2F2A26',
+                    padding: '1rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #403A34'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <code style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 'bold',
+                        color: '#B34B0C',
+                        letterSpacing: '0.1em'
+                      }}>
+                        {discordCode}
+                      </code>
+                      <button
+                        onClick={copyDiscordCode}
+                        style={{
+                          backgroundColor: codeCopied ? '#065F46' : '#B34B0C',
+                          color: 'white',
+                          padding: '0.5rem',
+                          borderRadius: '0.375rem',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Copy code"
+                      >
+                        {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <p style={{ color: '#B3B2B0', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      ⏱️ Expires: {discordCodeExpiry ? new Date(discordCodeExpiry).toLocaleString() : 'N/A'}
+                    </p>
+                    <p style={{ color: '#B3B2B0', fontSize: '0.875rem' }}>
+                      💡 Use <code style={{ 
+                        backgroundColor: '#4A4540',
+                        padding: '0.125rem 0.375rem',
+                        borderRadius: '0.25rem',
+                        color: '#B34B0C'
+                      }}>!connect {discordCode}</code> in Discord (code expires in 15 minutes)
+                    </p>
+                    <button
+                      onClick={generateDiscordCode}
+                      disabled={generatingCode}
+                      style={{
+                        backgroundColor: '#4A4540',
+                        color: '#D1CFC9',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        marginTop: '0.75rem',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Generate New Code
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {user.isAdmin && (
                 <div style={{
                   backgroundColor: '#B34B0C',
