@@ -35,7 +35,14 @@ export function setupPassport() {
     console.log('Deserializing user with ID:', id);
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
-      console.log('Deserialized user:', user ? user.username : 'not found');
+      
+      if (!user) {
+        console.log('Deserialized user: not found - clearing invalid session');
+        // User doesn't exist (maybe DB was reset) - don't error, just return false
+        return done(null, false);
+      }
+      
+      console.log('Deserialized user:', user.username);
       done(null, user);
     } catch (err) {
       console.error('Deserialize error:', err);

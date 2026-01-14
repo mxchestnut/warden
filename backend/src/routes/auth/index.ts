@@ -158,7 +158,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Generate unique 6-digit account code
-    let accountCode: string;
+    let accountCode: string = '';
     let codeExists = true;
     while (codeExists) {
       accountCode = Math.floor(100000 + Math.random() * 900000).toString();
