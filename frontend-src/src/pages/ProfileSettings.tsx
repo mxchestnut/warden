@@ -3,7 +3,7 @@ import { Link as LinkIcon } from 'lucide-react'
 import { authService } from '../services/auth'
 import { Navigation } from '../components/ui/Navigation'
 
-type ProfileTab = 'profile' | 'pathcompanion' | 'discord'
+type ProfileTab = 'profile' | 'pathcompanion'
 
 interface UserData {
   id: number
@@ -26,19 +26,10 @@ export function ProfileSettings() {
   const [pcPassword, setPcPassword] = useState('')
   const [pcConnecting, setPcConnecting] = useState(false)
 
-  // Discord bot token state
-  const [discordToken, setDiscordToken] = useState('')
-  const [hasDiscordToken, setHasDiscordToken] = useState(false)
-  const [discordSaving, setDiscordSaving] = useState(false)
-
-  // Discord connection code state
-  const [connectionCode, setConnectionCode] = useState<string | null>(null)
-  const [codeExpiration, setCodeExpiration] = useState<Date | null>(null)
-  const [generatingCode, setGeneratingCode] = useState(false)
+  // Removed Discord bot state - no longer needed
 
   useEffect(() => {
     loadUserData()
-    loadDiscordSettings()
   }, [])
 
   const loadUserData = async () => {
@@ -60,19 +51,6 @@ export function ProfileSettings() {
     }
   }
 
-  const loadDiscordSettings = async () => {
-    try {
-      const response = await fetch('/api/auth/discord-settings', {
-        credentials: 'include'
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setHasDiscordToken(data.hasToken)
-      }
-    } catch (err) {
-      console.error('Failed to load Discord settings:', err)
-    }
-  }
 
   const connectPathCompanion = async () => {
     if (!pcUsername || !pcPassword) {
@@ -141,66 +119,11 @@ export function ProfileSettings() {
     }
   }
 
-  const saveDiscordToken = async () => {
-    try {
-      setDiscordSaving(true)
-      setError(null)
-      setSuccess(null)
-
-      const response = await fetch('/api/auth/discord-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ botToken: discordToken || null })
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to save Discord settings')
-      }
-
-      const data = await response.json()
-      setSuccess('Discord bot token saved successfully!')
-      setHasDiscordToken(data.hasToken)
-      setDiscordToken('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save Discord settings')
-    } finally {
-      setDiscordSaving(false)
-    }
-  }
-
-  const generateConnectionCode = async () => {
-    try {
-      setGeneratingCode(true)
-      setError(null)
-
-      const response = await fetch('/api/auth/generate-discord-code', {
-        method: 'POST',
-        credentials: 'include'
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to generate connection code')
-      }
-
-      const data = await response.json()
-      setConnectionCode(data.code)
-      setCodeExpiration(new Date(data.expiresAt))
-      setSuccess('Connection code generated! Use it in Discord with !connect')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate connection code')
-    } finally {
-      setGeneratingCode(false)
-    }
-  }
-
   if (loading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#37322E' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#37322E' }}>
         <Navigation user={user} />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '4rem' }}>
           <p style={{ color: 'white' }}>Loading...</p>
         </div>
       </div>
@@ -208,9 +131,9 @@ export function ProfileSettings() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#37322E' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#37322E' }}>
       <Navigation user={user} />
-      <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>
             Profile & Settings
@@ -276,20 +199,6 @@ export function ProfileSettings() {
             >
               PathCompanion
             </button>
-            <button
-              onClick={() => setActiveTab('discord')}
-              style={{
-                padding: '1rem',
-                color: activeTab === 'discord' ? '#D4AF37' : '#B3B2B0',
-                borderBottom: activeTab === 'discord' ? '2px solid #D4AF37' : 'none',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: activeTab === 'discord' ? 'bold' : 'normal'
-              }}
-            >
-              Discord Bot
-            </button>
           </div>
         </div>
 
@@ -341,6 +250,9 @@ export function ProfileSettings() {
                     cursor: 'not-allowed'
                   }}
                 />
+                <p style={{ color: '#B3B2B0', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  Use this ID in Discord to sync your profile with the Warden bot
+                </p>
               </div>
               {user.isAdmin && (
                 <div style={{
@@ -459,150 +371,6 @@ export function ProfileSettings() {
                 </button>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Discord Bot Tab */}
-        {activeTab === 'discord' && (
-          <div style={{
-            backgroundColor: '#4A4540',
-            borderRadius: '0.75rem',
-            padding: '2rem'
-          }}>
-            {/* Discord Account Connection */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
-                Discord Account Connection
-              </h2>
-              <p style={{ color: '#B3B2B0', marginBottom: '1.5rem' }}>
-                Link your Discord account to use Warden bot commands with your characters.
-              </p>
-
-              {connectionCode ? (
-                <div style={{
-                  backgroundColor: '#065F46',
-                  borderRadius: '0.75rem',
-                  padding: '1.5rem',
-                  marginBottom: '1rem'
-                }}>
-                  <p style={{ color: 'white', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                    Your connection code (expires in 15 minutes):
-                  </p>
-                  <div style={{
-                    backgroundColor: '#064E3B',
-                    padding: '1rem',
-                    borderRadius: '0.5rem',
-                    marginBottom: '1rem',
-                    fontFamily: 'monospace',
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    color: '#10B981',
-                    textAlign: 'center',
-                    letterSpacing: '0.2em'
-                  }}>
-                    {connectionCode}
-                  </div>
-                  <p style={{ color: 'white', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    To connect your Discord account:
-                  </p>
-                  <ol style={{ color: '#B3B2B0', fontSize: '0.875rem', paddingLeft: '1.5rem', marginBottom: '1rem' }}>
-                    <li>Open Discord</li>
-                    <li>Send this command in any channel or DM to Warden bot:</li>
-                  </ol>
-                  <div style={{
-                    backgroundColor: '#1F2937',
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    fontFamily: 'monospace',
-                    color: '#10B981',
-                    marginBottom: '1rem'
-                  }}>
-                    !connect {connectionCode}
-                  </div>
-                  {codeExpiration && (
-                    <p style={{ color: '#FCD34D', fontSize: '0.75rem' }}>
-                      ⏱️ Expires at {codeExpiration.toLocaleTimeString()}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={generateConnectionCode}
-                  disabled={generatingCode}
-                  style={{
-                    backgroundColor: '#5865F2',
-                    color: 'white',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '0.5rem',
-                    border: 'none',
-                    cursor: generatingCode ? 'not-allowed' : 'pointer',
-                    opacity: generatingCode ? 0.6 : 1,
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {generatingCode ? 'Generating...' : 'Generate Discord Connection Code'}
-                </button>
-              )}
-            </div>
-
-            {/* Discord Bot Token */}
-            <div style={{ borderTop: '1px solid #666', paddingTop: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
-                Discord Bot Settings
-              </h2>
-              <p style={{ color: '#B3B2B0', marginBottom: '1.5rem' }}>
-                Configure your personal Discord bot token for character webhooks and notifications.
-              </p>
-
-              {hasDiscordToken && (
-                <div style={{
-                  backgroundColor: '#065F46',
-                  color: 'white',
-                  padding: '1rem',
-                  borderRadius: '0.5rem',
-                  marginBottom: '1rem'
-                }}>
-                  Discord bot token is configured
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', color: '#B3B2B0', marginBottom: '0.5rem' }}>
-                    Discord Bot Token
-                  </label>
-                  <input
-                    type="password"
-                    value={discordToken}
-                    onChange={(e) => setDiscordToken(e.target.value)}
-                    placeholder={hasDiscordToken ? "Enter new token to update" : "Enter your Discord bot token"}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #666',
-                      backgroundColor: '#333',
-                      color: 'white'
-                    }}
-                  />
-                </div>
-                <button
-                  onClick={saveDiscordToken}
-                  disabled={discordSaving}
-                  style={{
-                    backgroundColor: '#B34B0C',
-                    color: 'white',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '0.5rem',
-                    border: 'none',
-                    cursor: discordSaving ? 'not-allowed' : 'pointer',
-                    opacity: discordSaving ? 0.6 : 1
-                  }}
-                >
-                  {discordSaving ? 'Saving...' : hasDiscordToken ? 'Update Token' : 'Save Token'}
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
