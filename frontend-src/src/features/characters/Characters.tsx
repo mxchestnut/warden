@@ -122,6 +122,32 @@ export function Characters() {
     }
   }
 
+  const handleDeleteAllCharacters = async () => {
+    if (!confirm(`⚠️ WARNING: This will permanently delete ALL ${characters.length} of your characters!\n\nThis action CANNOT be undone. Are you absolutely sure?`)) {
+      return
+    }
+
+    // Second confirmation
+    if (!confirm('Last chance! Type "DELETE ALL" to confirm.\n\nClick OK if you typed DELETE ALL:')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/characters/delete-all`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(`Successfully deleted ${data.deleted} character(s)`)
+        await loadCharacters()
+      }
+    } catch (error) {
+      console.error('Failed to delete character:', error)
+    }
+  }
+
   const filteredAndSortedCharacters = characters
     .filter((character) => {
       if (!searchQuery) return true
@@ -169,14 +195,27 @@ export function Characters() {
               Manage your characters, sync with PathCompanion, and track your adventures
             </p>
           </div>
-          <button
-            onClick={handleCreateCharacter}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors text-white"
-            style={{ backgroundColor: '#B34B0C' }}
-          >
-            <Plus className="w-5 h-5" />
-            New Character
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            {characters.length > 0 && (
+              <button
+                onClick={handleDeleteAllCharacters}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors text-white"
+                style={{ backgroundColor: '#8B0000' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#A52A2A'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#8B0000'}
+              >
+                Delete All Characters
+              </button>
+            )}
+            <button
+              onClick={handleCreateCharacter}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors text-white"
+              style={{ backgroundColor: '#B34B0C' }}
+            >
+              <Plus className="w-5 h-5" />
+              New Character
+            </button>
+          </div>
         </div>
 
         {characters.length > 0 && (

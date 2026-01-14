@@ -979,8 +979,8 @@ router.post('/:id/link-pathcompanion', async (req, res) => {
   }
 });
 
-// Import characters from Tupperbox JSON export
-router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
+// Preview Tupperbox import to detect conflicts
+router.post('/import-tupperbox-preview', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     const { tuppers } = req.body;
@@ -989,19 +989,87 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: 'Invalid Tupperbox data. Expected "tuppers" array.' });
     }
 
+    // Get existing user characters
+    const existingCharacters = await db.select().from(characterSheets).where(
+      eq(characterSheets.userId, userId)
+    );
+
+    const conflicts = [];
+    const newCharacters = [];
+
+    for (const tupper of tuppers) {
+      const name = tupper.name || 'Unnamed Character';
+      
+      // Check for name conflict (case-insensitive)
+      const nameMatch = existingCharacters.find(
+        c => c.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (nameMatch) {
+        conflicts.push({
+          tupperName: name,
+          existingId: nameMatch.id,
+          existingName: nameMatch.name,
+          tupperAvatar: tupper.avatar_url || null,
+          existingAvatar: nameMatch.avatarUrl || null
+        });
+      } else {
+        newCharacters.push({ name, avatar: tupper.avatar_url });
+      }
+    }
+
+    res.json({
+      conflicts,
+      newCharacters,
+      totalToImport: tuppers.length
+    });
+  } catch (error) {
+    console.error('Error previewing Tupperbox import:', error);
+    res.status(500).json({ error: 'Failed to preview Tupperbox import' });
+  }
+});
+
+// Import characters from Tupperbox JSON export
+router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    const { tuppers, mergeDecisions = {} } = req.body;
+
+    if (!tuppers || !Array.isArray(tuppers)) {
+      return res.status(400).json({ error: 'Invalid Tupperbox data. Expected "tuppers" array.' });
+    }
+
+    // Get existing characters for conflict resolution
+    const existingCharacters = await db.select().from(characterSheets).where(
+      eq(characterSheets.userId, userId)
+    );
+
     const imported = [];
     const errors = [];
+    const skipped = [];
 
     for (const tupper of tuppers) {
       try {
+        const name = tupper.name || 'Unnamed Character';
+        const decision = mergeDecisions[name];
+
+        // Skip if user chose to skip
+        if (decision === 'skip') {
+          skipped.push({ name });
+          continue;
+        }
+
+        // Check for existing character with same name
+        const nameMatch = existingCharacters.find(
+          c => c.name.toLowerCase() === name.toLowerCase()
+        );
+
         // Tupperbox format: { name, avatar_url, description, birthday, brackets, etc }
         const characterData: Record<string, any> = {
           userId,
-          name: tupper.name || 'Unnamed Character',
-          // Use description for bio if available
-          bio: tupper.description || null,
+          name,
+          personalityOneSentence: tupper.description || null,
           avatarUrl: tupper.avatar_url || null,
-          // Default stats
           strength: 10,
           dexterity: 10,
           constitution: 10,
@@ -1023,16 +1091,30 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
           willSave: 0
         };
 
-        // Parse birthday for age if present
         if (tupper.birthday) {
           characterData.age = tupper.birthday;
         }
 
-        const [newChar] = await db.insert(characterSheets)
-          .values(characterData as any)
-          .returning();
-
-        imported.push(newChar);
+        if (nameMatch && decision === 'merge') {
+          // Merge: update existing character, preserve avatar if Tupperbox doesn't have one
+          const avatarUrl = tupper.avatar_url || nameMatch.avatarUrl;
+          await db.update(characterSheets)
+            .set({
+              personalityOneSentence: tupper.description || nameMatch.personalityOneSentence,
+              avatarUrl: avatarUrl,
+              updatedAt: new Date()
+            })
+            .where(eq(characterSheets.id, nameMatch.id));
+          
+          imported.push({ name, action: 'merged', id: nameMatch.id });
+        } else {
+          // Create new character (no conflict or keep-both decision)
+          const [newChar] = await db.insert(characterSheets)
+            .values(characterData as any)
+            .returning();
+          
+          imported.push({ name, action: 'created', id: newChar.id });
+        }
       } catch (err: Error | unknown) {
         const error = err instanceof Error ? err : new Error(String(err));
         console.error(`Failed to import character ${tupper.name}:`, error);
@@ -1044,15 +1126,38 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
     }
 
     res.json({
-      success: true,
+      success: imported.length > 0 || skipped.length > 0,
       imported: imported.length,
       failed: errors.length,
+      skipped: skipped.length,
       characters: imported,
+      skippedCharacters: skipped,
       errors: errors.length > 0 ? errors : undefined
     });
   } catch (error) {
     console.error('Error importing Tupperbox data:', error);
     res.status(500).json({ error: 'Failed to import Tupperbox characters' });
+  }
+});
+
+// Delete all characters for current user
+router.delete('/delete-all', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    
+    // Delete all characters for this user
+    const deleted = await db.delete(characterSheets)
+      .where(eq(characterSheets.userId, userId))
+      .returning();
+
+    res.json({
+      success: true,
+      deleted: deleted.length,
+      message: `Successfully deleted ${deleted.length} character(s)`
+    });
+  } catch (error) {
+    console.error('Error deleting all characters:', error);
+    res.status(500).json({ error: 'Failed to delete characters' });
   }
 });
 

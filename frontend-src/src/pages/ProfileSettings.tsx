@@ -32,7 +32,7 @@ export function ProfileSettings() {
   const [importingTupperbox, setImportingTupperbox] = useState(false)
   const [tupperboxData, setTupperboxData] = useState('')
   
-  // Conflict resolution state
+  // Conflict resolution state (PathCompanion)
   const [showConflictModal, setShowConflictModal] = useState(false)
   const [conflicts, setConflicts] = useState<Array<{
     pathCompanionId: string
@@ -46,6 +46,19 @@ export function ProfileSettings() {
     name: string
   }>>([])
   const [conflictDecisions, setConflictDecisions] = useState<{[key: string]: 'merge' | 'keep-both' | 'skip'}>({})
+
+  // Tupperbox conflict resolution state
+  const [showTupperboxConflictModal, setShowTupperboxConflictModal] = useState(false)
+  const [tupperboxConflicts, setTupperboxConflicts] = useState<Array<{
+    tupperName: string
+    existingId: number
+    existingName: string
+    tupperAvatar: string | null
+    existingAvatar: string | null
+  }>>([])
+  const [tupperboxNewCharacters, setTupperboxNewCharacters] = useState<Array<{ name: string, avatar: string | null }>>([]) 
+  const [tupperboxConflictDecisions, setTupperboxConflictDecisions] = useState<{[key: string]: 'merge' | 'keep-both' | 'skip'}>({})
+  const [tupperboxParsedData, setTupperboxParsedData] = useState<any>(null)
 
   // Copy state
   const [copied, setCopied] = useState(false)
@@ -303,7 +316,8 @@ export function ProfileSettings() {
         throw new Error('Failed to get CSRF token')
       }
 
-      const response = await fetch('/api/characters/import-tupperbox', {
+      // Step 1: Preview to check for conflicts
+      const previewResponse = await fetch('/api/characters/import-tupperbox-preview', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -313,17 +327,79 @@ export function ProfileSettings() {
         body: JSON.stringify({ tuppers: parsedData.tuppers })
       })
 
+      if (!previewResponse.ok) {
+        throw new Error('Failed to check for conflicts')
+      }
+
+      const preview = await previewResponse.json()
+
+      // If conflicts exist, show modal
+      if (preview.conflicts && preview.conflicts.length > 0) {
+        setTupperboxConflicts(preview.conflicts)
+        setTupperboxNewCharacters(preview.newCharacters)
+        setTupperboxParsedData(parsedData)
+        setShowTupperboxConflictModal(true)
+        setImportingTupperbox(false)
+        return
+      }
+
+      // No conflicts, proceed with import
+      await performTupperboxImport(csrfToken, parsedData, {})
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import Tupperbox characters')
+      setImportingTupperbox(false)
+    }
+  }
+
+  const performTupperboxImport = async (csrfToken: string, parsedData: any, mergeDecisions: any) => {
+    try {
+      const response = await fetch('/api/characters/import-tupperbox', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
+        credentials: 'include',
+        body: JSON.stringify({ tuppers: parsedData.tuppers, mergeDecisions })
+      })
+
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Failed to import characters')
       }
 
       const data = await response.json()
-      setSuccess(`Successfully imported ${data.imported || 0} characters! ${data.failed ? `(${data.failed} failed)` : ''}`)
+      setSuccess(`Successfully imported ${data.imported || 0} characters! ${data.failed ? `(${data.failed} failed)` : ''}${data.skipped ? ` (${data.skipped} skipped)` : ''}`)
       setTupperboxData('')
+      setShowTupperboxConflictModal(false)
+      setTupperboxConflicts([])
+      setTupperboxConflictDecisions({})
+    } catch (err) {
+      throw err
+    } finally {
+      setImportingTupperbox(false)
+    }
+  }
+
+  const handleTupperboxConflictResolve = async () => {
+    const undecided = tupperboxConflicts.filter(c => !tupperboxConflictDecisions[c.tupperName])
+    if (undecided.length > 0) {
+      setError(`Please make a decision for all ${undecided.length} conflict(s)`)
+      return
+    }
+
+    setImportingTupperbox(true)
+    setError(null)
+
+    try {
+      const csrfToken = await getCsrfToken()
+      if (!csrfToken) {
+        throw new Error('Failed to get CSRF token')
+      }
+
+      await performTupperboxImport(csrfToken, tupperboxParsedData, tupperboxConflictDecisions)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import Tupperbox characters')
-    } finally {
       setImportingTupperbox(false)
     }
   }
@@ -905,6 +981,150 @@ export function ProfileSettings() {
                   }}
                 >
                   {importingAll ? 'Importing...' : 'Import Characters'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tupperbox Conflict Resolution Modal */}
+        {showTupperboxConflictModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}>
+            <div style={{
+              backgroundColor: '#4A4540',
+              borderRadius: '0.75rem',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              padding: '2rem'
+            }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                Character Name Conflicts (Tupperbox)
+              </h2>
+              <p style={{ color: '#B3B2B0', marginBottom: '1.5rem' }}>
+                Found {tupperboxConflicts.length} character(s) with matching names in your existing characters.
+                Choose how to handle each conflict:
+              </p>
+
+              {tupperboxConflicts.map((conflict) => (
+                <div key={conflict.tupperName} style={{
+                  backgroundColor: '#37322E',
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div style={{ color: 'white', fontWeight: 'bold' }}>{conflict.tupperName}</div>
+                    <div style={{ color: '#B3B2B0', fontSize: '0.875rem' }}>Exists in Warden</div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setTupperboxConflictDecisions({
+                        ...tupperboxConflictDecisions,
+                        [conflict.tupperName]: 'merge'
+                      })}
+                      style={{
+                        flex: '1 1 auto',
+                        backgroundColor: tupperboxConflictDecisions[conflict.tupperName] === 'merge' ? '#B34B0C' : '#524944',
+                        color: 'white',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: tupperboxConflictDecisions[conflict.tupperName] === 'merge' ? '2px solid #D4AF37' : '2px solid transparent',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Merge/Update
+                    </button>
+                    <button
+                      onClick={() => setTupperboxConflictDecisions({
+                        ...tupperboxConflictDecisions,
+                        [conflict.tupperName]: 'keep-both'
+                      })}
+                      style={{
+                        flex: '1 1 auto',
+                        backgroundColor: tupperboxConflictDecisions[conflict.tupperName] === 'keep-both' ? '#B34B0C' : '#524944',
+                        color: 'white',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: tupperboxConflictDecisions[conflict.tupperName] === 'keep-both' ? '2px solid #D4AF37' : '2px solid transparent',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Keep Both
+                    </button>
+                    <button
+                      onClick={() => setTupperboxConflictDecisions({
+                        ...tupperboxConflictDecisions,
+                        [conflict.tupperName]: 'skip'
+                      })}
+                      style={{
+                        flex: '1 1 auto',
+                        backgroundColor: tupperboxConflictDecisions[conflict.tupperName] === 'skip' ? '#B34B0C' : '#524944',
+                        color: 'white',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: tupperboxConflictDecisions[conflict.tupperName] === 'skip' ? '2px solid #D4AF37' : '2px solid transparent',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#37322E', borderRadius: '0.5rem' }}>
+                <p style={{ color: '#B3B2B0', fontSize: '0.875rem' }}>
+                  <strong>{tupperboxNewCharacters.length}</strong> new character(s) will be imported without conflicts.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button
+                  onClick={() => setShowTupperboxConflictModal(false)}
+                  disabled={importingTupperbox}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#666',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    border: 'none',
+                    cursor: importingTupperbox ? 'not-allowed' : 'pointer',
+                    opacity: importingTupperbox ? 0.6 : 1
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleTupperboxConflictResolve}
+                  disabled={importingTupperbox || tupperboxConflicts.some(c => !tupperboxConflictDecisions[c.tupperName])}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#B34B0C',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    border: 'none',
+                    cursor: (importingTupperbox || tupperboxConflicts.some(c => !tupperboxConflictDecisions[c.tupperName])) ? 'not-allowed' : 'pointer',
+                    opacity: (importingTupperbox || tupperboxConflicts.some(c => !tupperboxConflictDecisions[c.tupperName])) ? 0.6 : 1
+                  }}
+                >
+                  {importingTupperbox ? 'Importing...' : 'Import Characters'}
                 </button>
               </div>
             </div>
