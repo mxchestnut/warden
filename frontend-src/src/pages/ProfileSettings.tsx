@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link as LinkIcon, Copy, Check } from 'lucide-react'
+import { Link as LinkIcon, Copy, Check, Upload, Download } from 'lucide-react'
 import { authService } from '../services/auth'
 import { Navigation } from '../components/ui/Navigation'
 
-type ProfileTab = 'profile' | 'pathcompanion'
+type ProfileTab = 'profile' | 'pathcompanion' | 'import'
 
 interface UserData {
   id: number
@@ -26,6 +26,11 @@ export function ProfileSettings() {
   const [pcUsername, setPcUsername] = useState('')
   const [pcPassword, setPcPassword] = useState('')
   const [pcConnecting, setPcConnecting] = useState(false)
+
+  // Import state
+  const [importingAll, setImportingAll] = useState(false)
+  const [importingTupperbox, setImportingTupperbox] = useState(false)
+  const [tupperboxData, setTupperboxData] = useState('')
 
   // Copy state
   const [copied, setCopied] = useState(false)
@@ -143,6 +148,85 @@ export function ProfileSettings() {
     }
   }
 
+  const importAllPathCompanion = async () => {
+    if (!user?.pathCompanionConnected) {
+      setError('Please connect your PathCompanion account first')
+      return
+    }
+
+    if (!confirm('Import all characters from PathCompanion? This will sync all your characters.')) {
+      return
+    }
+
+    try {
+      setImportingAll(true)
+      setError(null)
+      setSuccess(null)
+
+      const response = await fetch('/api/pathcompanion/import-all', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to import characters')
+      }
+
+      const data = await response.json()
+      setSuccess(`Successfully imported ${data.success?.length || 0} characters! ${data.failed?.length ? `(${data.failed.length} failed)` : ''}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import characters')
+    } finally {
+      setImportingAll(false)
+    }
+  }
+
+  const importTupperbox = async () => {
+    if (!tupperboxData.trim()) {
+      setError('Please paste your Tupperbox JSON data')
+      return
+    }
+
+    try {
+      setImportingTupperbox(true)
+      setError(null)
+      setSuccess(null)
+
+      // Parse the JSON to validate it
+      let parsedData
+      try {
+        parsedData = JSON.parse(tupperboxData)
+      } catch (parseErr) {
+        throw new Error('Invalid JSON format. Please paste the exact JSON export from Tupperbox.')
+      }
+
+      if (!parsedData.tuppers || !Array.isArray(parsedData.tuppers)) {
+        throw new Error('Invalid Tupperbox format. Expected "tuppers" array.')
+      }
+
+      const response = await fetch('/api/characters/import-tupperbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tuppers: parsedData.tuppers })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to import characters')
+      }
+
+      const data = await response.json()
+      setSuccess(`Successfully imported ${data.imported || 0} characters! ${data.failed ? `(${data.failed} failed)` : ''}`)
+      setTupperboxData('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import Tupperbox characters')
+    } finally {
+      setImportingTupperbox(false)
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#37322E' }}>
@@ -222,6 +306,20 @@ export function ProfileSettings() {
               }}
             >
               PathCompanion
+            </button>
+            <button
+              onClick={() => setActiveTab('import')}
+              style={{
+                padding: '1rem',
+                color: activeTab === 'import' ? '#D4AF37' : '#B3B2B0',
+                borderBottom: activeTab === 'import' ? '2px solid #D4AF37' : 'none',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: activeTab === 'import' ? 'bold' : 'normal'
+              }}
+            >
+              Import Characters
             </button>
           </div>
         </div>
@@ -424,6 +522,146 @@ export function ProfileSettings() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Import Tab */}
+        {activeTab === 'import' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* PathCompanion Bulk Import */}
+            <div style={{
+              backgroundColor: '#4A4540',
+              borderRadius: '0.75rem',
+              padding: '2rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <Download className="w-6 h-6" style={{ color: '#D4AF37' }} />
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
+                  Import from PathCompanion
+                </h2>
+              </div>
+              <p style={{ color: '#B3B2B0', marginBottom: '1.5rem' }}>
+                Bulk import all your characters from PathCompanion. This will sync all characters from your connected account.
+              </p>
+
+              {!user?.pathCompanionConnected ? (
+                <div style={{
+                  backgroundColor: '#7F1D1D',
+                  color: 'white',
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem'
+                }}>
+                  ⚠️ Please connect your PathCompanion account first in the PathCompanion tab
+                </div>
+              ) : (
+                <div style={{
+                  backgroundColor: '#065F46',
+                  color: 'white',
+                  padding: '1rem',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <LinkIcon className="w-5 h-5" />
+                  <span>Connected as <strong>{user.pathCompanionUsername}</strong></span>
+                </div>
+              )}
+
+              <button
+                onClick={importAllPathCompanion}
+                disabled={importingAll || !user?.pathCompanionConnected}
+                style={{
+                  backgroundColor: user?.pathCompanionConnected ? '#B34B0C' : '#666',
+                  color: 'white',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  cursor: (importingAll || !user?.pathCompanionConnected) ? 'not-allowed' : 'pointer',
+                  opacity: (importingAll || !user?.pathCompanionConnected) ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Download className="w-5 h-5" />
+                {importingAll ? 'Importing...' : 'Import All Characters'}
+              </button>
+            </div>
+
+            {/* Tupperbox Import */}
+            <div style={{
+              backgroundColor: '#4A4540',
+              borderRadius: '0.75rem',
+              padding: '2rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <Upload className="w-6 h-6" style={{ color: '#D4AF37' }} />
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
+                  Import from Tupperbox
+                </h2>
+              </div>
+              <p style={{ color: '#B3B2B0', marginBottom: '1rem' }}>
+                Import characters from Tupperbox JSON export. Get your export by using the <code style={{ 
+                  backgroundColor: '#333', 
+                  padding: '0.25rem 0.5rem', 
+                  borderRadius: '0.25rem',
+                  color: '#D4AF37'
+                }}>tul!export</code> command in Discord.
+              </p>
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', color: '#B3B2B0', marginBottom: '0.5rem' }}>
+                  Tupperbox JSON Data
+                </label>
+                <textarea
+                  value={tupperboxData}
+                  onChange={(e) => setTupperboxData(e.target.value)}
+                  placeholder='Paste your Tupperbox JSON here (e.g., {"tuppers": [...]})'
+                  rows={10}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #666',
+                    backgroundColor: '#333',
+                    color: 'white',
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    resize: 'vertical'
+                  }}
+                />
+                <p style={{ color: '#888', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  💡 Tip: Run <code style={{ 
+                    backgroundColor: '#333', 
+                    padding: '0.125rem 0.375rem', 
+                    borderRadius: '0.25rem'
+                  }}>tul!export</code> in Discord, copy the entire JSON response, and paste it here
+                </p>
+              </div>
+
+              <button
+                onClick={importTupperbox}
+                disabled={importingTupperbox || !tupperboxData.trim()}
+                style={{
+                  backgroundColor: tupperboxData.trim() ? '#B34B0C' : '#666',
+                  color: 'white',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  cursor: (importingTupperbox || !tupperboxData.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (importingTupperbox || !tupperboxData.trim()) ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Upload className="w-5 h-5" />
+                {importingTupperbox ? 'Importing...' : 'Import Tupperbox Characters'}
+              </button>
+            </div>
           </div>
         )}
       </div>
