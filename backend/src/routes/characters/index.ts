@@ -534,6 +534,60 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Delete all characters for current user
+// IMPORTANT: This must come BEFORE the /:id route to avoid matching "delete-all" as an ID
+router.delete('/delete-all', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any).id;
+    
+    // Get all character IDs for this user first
+    const userCharacters = await db.select({ id: characterSheets.id })
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, userId));
+    
+    const characterIds = userCharacters.map(c => c.id);
+    
+    console.log(`Delete-all: Found ${characterIds.length} characters for user ${userId}:`, characterIds);
+    
+    if (characterIds.length === 0) {
+      return res.json({
+        success: true,
+        deleted: 0,
+        message: 'No characters to delete'
+      });
+    }
+    
+    // Delete all related records first (to avoid foreign key constraints)
+    console.log('Delete-all: Deleting related records...');
+    
+    await Promise.all([
+      db.delete(channelCharacterMappings).where(inArray(channelCharacterMappings.characterId, characterIds)),
+      db.delete(characterStats).where(inArray(characterStats.characterId, characterIds)),
+      db.delete(activityFeed).where(inArray(activityFeed.characterId, characterIds)),
+      db.delete(characterMemories).where(inArray(characterMemories.characterId, characterIds)),
+      db.delete(characterRelationships).where(inArray(characterRelationships.characterId, characterIds))
+    ]);
+    
+    console.log('Delete-all: Related records deleted, now deleting characters...');
+    
+    // Now delete the characters themselves
+    const deleted = await db.delete(characterSheets)
+      .where(eq(characterSheets.userId, userId))
+      .returning();
+
+    console.log(`Delete-all: Successfully deleted ${deleted.length} characters`);
+
+    res.json({
+      success: true,
+      deleted: deleted.length,
+      message: `Successfully deleted ${deleted.length} character(s)`
+    });
+  } catch (error) {
+    console.error('Error in delete-all endpoint:', error);
+    res.status(500).json({ error: 'Failed to delete characters' });
+  }
+});
+
 // Delete a character sheet
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {
@@ -1146,59 +1200,6 @@ router.post('/import-tupperbox', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error('Error importing Tupperbox data:', error);
     res.status(500).json({ error: 'Failed to import Tupperbox characters' });
-  }
-});
-
-// Delete all characters for current user
-router.delete('/delete-all', isAuthenticated, async (req, res) => {
-  try {
-    const userId = (req.user as any).id;
-    
-    // Get all character IDs for this user first
-    const userCharacters = await db.select({ id: characterSheets.id })
-      .from(characterSheets)
-      .where(eq(characterSheets.userId, userId));
-    
-    const characterIds = userCharacters.map(c => c.id);
-    
-    console.log(`Delete-all: Found ${characterIds.length} characters for user ${userId}:`, characterIds);
-    
-    if (characterIds.length === 0) {
-      return res.json({
-        success: true,
-        deleted: 0,
-        message: 'No characters to delete'
-      });
-    }
-    
-    // Delete all related records first (to avoid foreign key constraints)
-    console.log('Delete-all: Deleting related records...');
-    
-    await Promise.all([
-      db.delete(channelCharacterMappings).where(inArray(channelCharacterMappings.characterId, characterIds)),
-      db.delete(characterStats).where(inArray(characterStats.characterId, characterIds)),
-      db.delete(activityFeed).where(inArray(activityFeed.characterId, characterIds)),
-      db.delete(characterMemories).where(inArray(characterMemories.characterId, characterIds)),
-      db.delete(characterRelationships).where(inArray(characterRelationships.characterId, characterIds))
-    ]);
-    
-    console.log('Delete-all: Related records deleted, now deleting characters...');
-    
-    // Now delete the characters themselves
-    const deleted = await db.delete(characterSheets)
-      .where(eq(characterSheets.userId, userId))
-      .returning();
-
-    console.log(`Delete-all: Successfully deleted ${deleted.length} characters`);
-
-    res.json({
-      success: true,
-      deleted: deleted.length,
-      message: `Successfully deleted ${deleted.length} character(s)`
-    });
-  } catch (error) {
-    console.error('Error in delete-all endpoint:', error);
-    res.status(500).json({ error: 'Failed to delete characters' });
   }
 });
 
