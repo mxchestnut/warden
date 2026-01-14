@@ -42,7 +42,7 @@ export function setupPassport() {
         return done(null, false);
       }
       
-      console.log('Deserialized user:', user.username);
+      console.log('Deserialized user:', user.username, 'accountCode:', user.accountCode, 'isAdmin:', user.isAdmin);
       done(null, user);
     } catch (err) {
       console.error('Deserialize error:', err);
