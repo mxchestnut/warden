@@ -710,12 +710,14 @@ router.post('/sync/:id', isAuthenticated, async (req, res) => {
 /**
  * Import all characters from PathCompanion account
  * POST /api/pathcompanion/import-all
+ * Body: { mergeDecisions?: { [pathCompanionId: string]: 'merge' | 'keep-both' | 'skip' } }
  * Requires Warden authentication AND PathCompanion account connection
  */
 router.post('/import-all', isAuthenticated, async (req, res) => {
   try {
     const user = req.user as any;
     const userId = user.id;
+    const { mergeDecisions = {} } = req.body;
 
     // Check if user has connected PathCompanion account
     if (!user.pathCompanionSessionTicket) {
@@ -735,10 +737,17 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
     const results: {
       success: Array<{ id: string; name: string; action: string }>;
       failed: Array<{ id: string; reason: string }>;
+      skipped: Array<{ id: string; name: string }>;
     } = {
       success: [],
-      failed: []
+      failed: [],
+      skipped: []
     };
+
+    // Get existing characters for name checking
+    const existingCharacters = await db.select().from(characterSheets).where(
+      eq(characterSheets.userId, userId)
+    );
 
     // Import each character sequentially to avoid overwhelming the DB
     for (const characterId of characterKeys) {
@@ -747,6 +756,14 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
 
         if (!character) {
           results.failed.push({ id: characterId, reason: 'Character not found' });
+          continue;
+        }
+
+        // Check for merge decision
+        const decision = mergeDecisions[characterId];
+        
+        if (decision === 'skip') {
+          results.skipped.push({ id: characterId, name: character.characterName });
           continue;
         }
 
@@ -763,13 +780,18 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
         const armor = PlayFabService.extractArmor(character.data);
         const spells = PlayFabService.extractSpells(character.data);
 
-        // Check if character already exists
-        const existing = await db.select().from(characterSheets).where(
+        // Check if character already exists by PathCompanion ID
+        const existingById = await db.select().from(characterSheets).where(
           eq(characterSheets.pathCompanionId, characterId)
         );
 
-        if (existing.length > 0) {
-          // Update existing character
+        // Check for name conflict
+        const nameMatch = existingCharacters.find(
+          c => c.name.toLowerCase() === character.characterName.toLowerCase() && !c.pathCompanionId
+        );
+
+        if (existingById.length > 0) {
+          // Update existing PathCompanion-linked character
           await db.update(characterSheets)
             .set({
               name: character.characterName,
@@ -811,11 +833,58 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
               lastSynced: new Date(),
               updatedAt: new Date()
             })
-            .where(eq(characterSheets.id, existing[0].id));
+            .where(eq(characterSheets.id, existingById[0].id));
 
           results.success.push({ id: characterId, name: character.characterName, action: 'updated' });
+        } else if (nameMatch && decision === 'merge') {
+          // Merge with existing character by name
+          await db.update(characterSheets)
+            .set({
+              strength: abilities.strength,
+              dexterity: abilities.dexterity,
+              constitution: abilities.constitution,
+              intelligence: abilities.intelligence,
+              wisdom: abilities.wisdom,
+              charisma: abilities.charisma,
+              characterClass: character.data.class || character.data.className,
+              level: level,
+              race: basicInfo.race,
+              alignment: basicInfo.alignment,
+              deity: basicInfo.deity,
+              size: basicInfo.size,
+              avatarUrl: basicInfo.avatarUrl,
+              currentHp: combatStats.currentHp,
+              maxHp: combatStats.maxHp,
+              tempHp: combatStats.tempHp,
+              armorClass: combatStats.armorClass,
+              touchAc: combatStats.touchAc,
+              flatFootedAc: combatStats.flatFootedAc,
+              initiative: combatStats.initiative,
+              speed: combatStats.speed,
+              baseAttackBonus: combatStats.baseAttackBonus,
+              cmb: combatStats.cmb,
+              cmd: combatStats.cmd,
+              fortitudeSave: saves.fortitudeSave,
+              reflexSave: saves.reflexSave,
+              willSave: saves.willSave,
+              skills: JSON.stringify(skills),
+              feats: JSON.stringify(feats),
+              specialAbilities: JSON.stringify(specialAbilities),
+              weapons: JSON.stringify(weapons),
+              armor: JSON.stringify(armor),
+              spells: JSON.stringify(spells),
+              pathCompanionData: JSON.stringify(character.data),
+              pathCompanionSession: user.pathCompanionSessionTicket,
+              pathCompanionId: characterId,
+              isPathCompanion: true,
+              lastSynced: new Date(),
+              updatedAt: new Date()
+            })
+            .where(eq(characterSheets.id, nameMatch.id));
+
+          results.success.push({ id: characterId, name: character.characterName, action: 'merged' });
         } else {
-          // Create new character
+          // Create new character (no conflict or decision is 'keep-both')
           await db.insert(characterSheets).values({
             userId,
             name: character.characterName,
@@ -873,12 +942,88 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
     res.json({
       message: `Imported ${results.success.length} characters`,
       success: results.success,
-      failed: results.failed
+      failed: results.failed,
+      skipped: results.skipped
     });
   } catch (error) {
     console.error('Failed to import all characters:', error);
     res.status(500).json({
       error: 'Failed to import characters',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * Preview PathCompanion import conflicts
+ * GET /api/pathcompanion/import-preview
+ * Checks for duplicate character names before importing
+ */
+router.get('/import-preview', isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+    const userId = user.id;
+
+    if (!user.pathCompanionSessionTicket) {
+      return res.status(400).json({
+        error: 'No PathCompanion account connected.'
+      });
+    }
+
+    // Get user data from PathCompanion
+    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+
+    // Filter to character entries
+    const characterKeys = Object.keys(userData)
+      .filter(key => /^character\d+$/.test(key))
+      .slice(0, 50);
+
+    const conflicts = [];
+    const newCharacters = [];
+
+    // Get all existing user characters
+    const existingCharacters = await db.select().from(characterSheets).where(
+      eq(characterSheets.userId, userId)
+    );
+
+    for (const characterId of characterKeys) {
+      try {
+        const character = await PlayFabService.getCharacter(user.pathCompanionSessionTicket, characterId);
+        if (!character) continue;
+
+        // Check for name conflicts
+        const nameMatch = existingCharacters.find(
+          c => c.name.toLowerCase() === character.characterName.toLowerCase()
+        );
+
+        if (nameMatch) {
+          conflicts.push({
+            pathCompanionId: characterId,
+            pathCompanionName: character.characterName,
+            existingId: nameMatch.id,
+            existingName: nameMatch.name,
+            existingIsLinked: !!nameMatch.pathCompanionId
+          });
+        } else {
+          newCharacters.push({
+            pathCompanionId: characterId,
+            name: character.characterName
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to check character ${characterId}:`, err);
+      }
+    }
+
+    res.json({
+      conflicts,
+      newCharacters,
+      totalToImport: characterKeys.length
+    });
+  } catch (error) {
+    console.error('Failed to preview import:', error);
+    res.status(500).json({
+      error: 'Failed to preview import',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }

@@ -31,6 +31,21 @@ export function ProfileSettings() {
   const [importingAll, setImportingAll] = useState(false)
   const [importingTupperbox, setImportingTupperbox] = useState(false)
   const [tupperboxData, setTupperboxData] = useState('')
+  
+  // Conflict resolution state
+  const [showConflictModal, setShowConflictModal] = useState(false)
+  const [conflicts, setConflicts] = useState<Array<{
+    pathCompanionId: string
+    pathCompanionName: string
+    existingId: number
+    existingName: string
+    existingIsLinked: boolean
+  }>>([])
+  const [newCharacters, setNewCharacters] = useState<Array<{
+    pathCompanionId: string
+    name: string
+  }>>([])
+  const [conflictDecisions, setConflictDecisions] = useState<{[key: string]: 'merge' | 'keep-both' | 'skip'}>({})
 
   // Copy state
   const [copied, setCopied] = useState(false)
@@ -165,10 +180,6 @@ export function ProfileSettings() {
       return
     }
 
-    if (!confirm('Import all characters from PathCompanion? This will sync all your characters.')) {
-      return
-    }
-
     try {
       setImportingAll(true)
       setError(null)
@@ -179,12 +190,49 @@ export function ProfileSettings() {
         throw new Error('Failed to get CSRF token')
       }
 
-      const response = await fetch('/api/pathcompanion/import-all', {
-        method: 'POST',
+      // First, check for conflicts
+      const previewResponse = await fetch('/api/pathcompanion/import-preview', {
         credentials: 'include',
         headers: {
           'x-csrf-token': csrfToken
         }
+      })
+
+      if (!previewResponse.ok) {
+        const data = await previewResponse.json()
+        throw new Error(data.error || 'Failed to check for conflicts')
+      }
+
+      const preview = await previewResponse.json()
+
+      // If there are conflicts, show modal
+      if (preview.conflicts && preview.conflicts.length > 0) {
+        setConflicts(preview.conflicts)
+        setNewCharacters(preview.newCharacters || [])
+        setConflictDecisions({})
+        setShowConflictModal(true)
+        setImportingAll(false)
+        return
+      }
+
+      // No conflicts, proceed with import
+      await performImport(csrfToken, {})
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import characters')
+      setImportingAll(false)
+    }
+  }
+
+  const performImport = async (csrfToken: string, mergeDecisions: {[key: string]: 'merge' | 'keep-both' | 'skip'}) => {
+    try {
+      const response = await fetch('/api/pathcompanion/import-all', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
+        body: JSON.stringify({ mergeDecisions })
       })
 
       if (!response.ok) {
@@ -193,10 +241,36 @@ export function ProfileSettings() {
       }
 
       const data = await response.json()
-      setSuccess(`Successfully imported ${data.success?.length || 0} characters! ${data.failed?.length ? `(${data.failed.length} failed)` : ''}`)
+      const skippedCount = data.skipped?.length || 0
+      setSuccess(`Successfully imported ${data.success?.length || 0} characters! ${data.failed?.length ? `(${data.failed.length} failed)` : ''} ${skippedCount ? `(${skippedCount} skipped)` : ''}`)
+      setShowConflictModal(false)
+    } catch (err) {
+      throw err
+    } finally {
+      setImportingAll(false)
+    }
+  }
+
+  const handleConflictResolve = async () => {
+    // Check if all conflicts have decisions
+    const undecided = conflicts.filter(c => !conflictDecisions[c.pathCompanionId])
+    if (undecided.length > 0) {
+      setError(`Please make a decision for all ${undecided.length} conflict(s)`)
+      return
+    }
+
+    try {
+      setError(null)
+      setImportingAll(true)
+      
+      const csrfToken = await getCsrfToken()
+      if (!csrfToken) {
+        throw new Error('Failed to get CSRF token')
+      }
+
+      await performImport(csrfToken, conflictDecisions)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import characters')
-    } finally {
       setImportingAll(false)
     }
   }
@@ -688,6 +762,151 @@ export function ProfileSettings() {
                 <Upload className="w-5 h-5" />
                 {importingTupperbox ? 'Importing...' : 'Import Tupperbox Characters'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Conflict Resolution Modal */}
+        {showConflictModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '2rem'
+          }}>
+            <div style={{
+              backgroundColor: '#4A4540',
+              borderRadius: '0.75rem',
+              padding: '2rem',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
+                Character Name Conflicts
+              </h2>
+              <p style={{ color: '#B3B2B0', marginBottom: '1.5rem' }}>
+                Found {conflicts.length} character(s) with matching names. Choose what to do for each:
+              </p>
+
+              {conflicts.map((conflict) => (
+                <div key={conflict.pathCompanionId} style={{
+                  backgroundColor: '#37322E',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ color: '#D4AF37', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                      {conflict.pathCompanionName}
+                    </div>
+                    <div style={{ color: '#B3B2B0', fontSize: '0.875rem' }}>
+                      {conflict.existingIsLinked 
+                        ? '⚠️ Existing character is already linked to PathCompanion'
+                        : 'Exists in your Warden account'
+                      }
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => setConflictDecisions({ ...conflictDecisions, [conflict.pathCompanionId]: 'merge' })}
+                      disabled={conflict.existingIsLinked}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: conflictDecisions[conflict.pathCompanionId] === 'merge' ? '2px solid #D4AF37' : '1px solid #666',
+                        backgroundColor: conflictDecisions[conflict.pathCompanionId] === 'merge' ? '#B34B0C' : '#524944',
+                        color: conflict.existingIsLinked ? '#666' : 'white',
+                        cursor: conflict.existingIsLinked ? 'not-allowed' : 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Merge/Update
+                    </button>
+                    <button
+                      onClick={() => setConflictDecisions({ ...conflictDecisions, [conflict.pathCompanionId]: 'keep-both' })}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: conflictDecisions[conflict.pathCompanionId] === 'keep-both' ? '2px solid #D4AF37' : '1px solid #666',
+                        backgroundColor: conflictDecisions[conflict.pathCompanionId] === 'keep-both' ? '#B34B0C' : '#524944',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Keep Both
+                    </button>
+                    <button
+                      onClick={() => setConflictDecisions({ ...conflictDecisions, [conflict.pathCompanionId]: 'skip' })}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        border: conflictDecisions[conflict.pathCompanionId] === 'skip' ? '2px solid #D4AF37' : '1px solid #666',
+                        backgroundColor: conflictDecisions[conflict.pathCompanionId] === 'skip' ? '#666' : '#524944',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#37322E', borderRadius: '0.5rem' }}>
+                <p style={{ color: '#B3B2B0', fontSize: '0.875rem' }}>
+                  <strong>{newCharacters.length}</strong> new character(s) will be imported without conflicts.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button
+                  onClick={() => setShowConflictModal(false)}
+                  disabled={importingAll}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#666',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    border: 'none',
+                    cursor: importingAll ? 'not-allowed' : 'pointer',
+                    opacity: importingAll ? 0.6 : 1
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConflictResolve}
+                  disabled={importingAll || conflicts.some(c => !conflictDecisions[c.pathCompanionId])}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#B34B0C',
+                    color: 'white',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    border: 'none',
+                    cursor: (importingAll || conflicts.some(c => !conflictDecisions[c.pathCompanionId])) ? 'not-allowed' : 'pointer',
+                    opacity: (importingAll || conflicts.some(c => !conflictDecisions[c.pathCompanionId])) ? 0.6 : 1
+                  }}
+                >
+                  {importingAll ? 'Importing...' : 'Import Characters'}
+                </button>
+              </div>
             </div>
           </div>
         )}
