@@ -792,6 +792,9 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
 
         if (existingById.length > 0) {
           // Update existing PathCompanion-linked character
+          // Preserve existing avatar if PathCompanion doesn't have one
+          const updateAvatarUrl = (basicInfo.avatarUrl && basicInfo.avatarUrl.trim()) || existingById[0].avatarUrl;
+          
           await db.update(characterSheets)
             .set({
               name: character.characterName,
@@ -807,7 +810,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
               alignment: basicInfo.alignment,
               deity: basicInfo.deity,
               size: basicInfo.size,
-              avatarUrl: basicInfo.avatarUrl,
+              avatarUrl: updateAvatarUrl,
               currentHp: combatStats.currentHp,
               maxHp: combatStats.maxHp,
               tempHp: combatStats.tempHp,
@@ -839,7 +842,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
         } else if (nameMatch && decision === 'merge') {
           // Merge with existing character by name
           // Preserve existing avatar if PathCompanion doesn't have one
-          const avatarUrl = basicInfo.avatarUrl || nameMatch.avatarUrl;
+          const mergeAvatarUrl = (basicInfo.avatarUrl && basicInfo.avatarUrl.trim()) || nameMatch.avatarUrl;
           
           await db.update(characterSheets)
             .set({
@@ -855,7 +858,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
               alignment: basicInfo.alignment,
               deity: basicInfo.deity,
               size: basicInfo.size,
-              avatarUrl: avatarUrl,
+              avatarUrl: mergeAvatarUrl,
               currentHp: combatStats.currentHp,
               maxHp: combatStats.maxHp,
               tempHp: combatStats.tempHp,
