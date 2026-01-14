@@ -32,6 +32,7 @@ const HouseRules = lazy(() => import('./pages/HouseRules'));
 const Invite = lazy(() => import('./pages/Invite'));
 const PendingApproval = lazy(() => import('./features/auth/PendingApproval'));
 const Login = lazy(() => import('./features/auth/Login').then(module => ({ default: module.Login })));
+const Register = lazy(() => import('./pages/Register').then(module => ({ default: module.Register })));
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -72,6 +73,11 @@ function AppWithRouter() {
           <Route path="/login" element={
             <PublicOnlyRoute>
               <Login />
+            </PublicOnlyRoute>
+          } />
+          <Route path="/register" element={
+            <PublicOnlyRoute>
+              <Register />
             </PublicOnlyRoute>
           } />
           <Route path="/terms" element={<TermsOfService />} />
