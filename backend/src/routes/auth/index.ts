@@ -406,6 +406,13 @@ router.get('/me', (req, res) => {
 
   if (req.isAuthenticated()) {
     const user = req.user as any;
+    console.log('GET /me - Returning user with accountCode:', user.accountCode);
+    
+    // Disable caching for this endpoint
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
     res.json({
       user: {
         id: user.id,
