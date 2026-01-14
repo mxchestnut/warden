@@ -821,7 +821,13 @@ async function handleProfile(message: Message, args: string[]) {
       const avatarUrl = character.avatarUrl.startsWith('http')
         ? character.avatarUrl
         : `https://warden.my${character.avatarUrl}`;
-      embed.setThumbnail(avatarUrl);
+      
+      // For Identity tab, show avatar as main image (larger), otherwise as thumbnail
+      if (tab === 'identity') {
+        embed.setImage(avatarUrl);
+      } else {
+        embed.setThumbnail(avatarUrl);
+      }
     }
 
     switch (tab) {
