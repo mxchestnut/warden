@@ -103,6 +103,17 @@ export function Characters() {
     window.location.href = `/characters/${id}`
   }
 
+  const getCsrfToken = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/csrf-token`, { credentials: 'include' })
+      const data = await response.json()
+      return data.csrfToken
+    } catch (err) {
+      console.error('Failed to get CSRF token:', err)
+      return null
+    }
+  }
+
   const handleDeleteCharacter = async (id: number) => {
     if (!confirm('Are you sure you want to delete this character?')) {
       return
@@ -133,18 +144,31 @@ export function Characters() {
     }
 
     try {
+      const csrfToken = await getCsrfToken()
+      if (!csrfToken) {
+        alert('Failed to get security token. Please try again.')
+        return
+      }
+
       const response = await fetch(`${API_URL}/api/characters/delete-all`, {
         method: 'DELETE',
         credentials: 'include',
+        headers: {
+          'x-csrf-token': csrfToken
+        }
       })
 
       if (response.ok) {
         const data = await response.json()
         alert(`Successfully deleted ${data.deleted} character(s)`)
         await loadCharacters()
+      } else {
+        const error = await response.json()
+        alert(`Failed to delete characters: ${error.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Failed to delete character:', error)
+      console.error('Failed to delete all characters:', error)
+      alert('Failed to delete characters. Please try again.')
     }
   }
 
