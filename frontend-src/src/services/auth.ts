@@ -111,7 +111,8 @@ class AuthService {
         return null
       }
 
-      this.user = await response.json()
+      const data = await response.json()
+      this.user = data.user // Extract user from response wrapper
       return this.user
     } catch {
       this.user = null
