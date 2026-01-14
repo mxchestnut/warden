@@ -5,6 +5,7 @@
 
 export interface User {
   id: number
+  accountCode: string
   username: string
   email?: string
   isAdmin: boolean

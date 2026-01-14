@@ -6,6 +6,7 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   email: text('email'),
+  accountCode: varchar('account_code', { length: 6 }).notNull().unique(),
   isAdmin: boolean('is_admin').default(false).notNull(),
   // PathCompanion account binding (optional)
   pathCompanionUsername: text('path_companion_username'),

@@ -157,11 +157,21 @@ router.post('/register', registerLimiter, async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Generate unique 6-digit account code
+    let accountCode: string;
+    let codeExists = true;
+    while (codeExists) {
+      accountCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const [existing] = await db.select().from(users).where(eq(users.accountCode, accountCode));
+      codeExists = !!existing;
+    }
+
     // Create user
     const [newUser] = await db.insert(users).values({
       username,
       password: hashedPassword,
-      email
+      email,
+      accountCode
     }).returning();
 
     res.json({ message: 'User created successfully', userId: newUser.id });
@@ -389,6 +399,7 @@ router.get('/me', (req, res) => {
     res.json({
       user: {
         id: user.id,
+        accountCode: user.accountCode,
         username: user.username,
         isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,

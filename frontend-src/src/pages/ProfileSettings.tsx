@@ -7,6 +7,7 @@ type ProfileTab = 'profile' | 'pathcompanion'
 
 interface UserData {
   id: number
+  accountCode: string
   username: string
   isAdmin: boolean
   pathCompanionConnected: boolean
@@ -123,12 +124,12 @@ export function ProfileSettings() {
   }
 
   const copyAccountId = async () => {
-    if (user?.id) {
+    if (user?.accountCode) {
       try {
-        await navigator.clipboard.writeText(user.id.toString())
+        await navigator.clipboard.writeText(user.accountCode)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
-        console.log('Copied Account ID:', user.id)
+        console.log('Copied Account Code:', user.accountCode)
       } catch (err) {
         console.error('Failed to copy:', err)
         // Fallback: try to select the text so user can manually copy
@@ -138,7 +139,7 @@ export function ProfileSettings() {
         }
       }
     } else {
-      console.error('No user ID available to copy')
+      console.error('No account code available to copy')
     }
   }
 
@@ -262,7 +263,7 @@ export function ProfileSettings() {
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    value={user.id}
+                    value={user.accountCode}
                     readOnly
                     onClick={(e) => e.currentTarget.select()}
                     style={{
