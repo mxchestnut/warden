@@ -1,6 +1,15 @@
 import { Router } from 'express';
 import { db } from '../../db';
-import { characterSheets, users, files } from '../../db/schema';
+import { 
+  characterSheets, 
+  users, 
+  files,
+  channelCharacterMappings,
+  characterStats,
+  activityFeed,
+  characterMemories,
+  characterRelationships
+} from '../../db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { isAuthenticated } from '../../middleware/auth';
 import { sendRollToDiscord } from '../../services/discordBot';
@@ -1145,7 +1154,47 @@ router.delete('/delete-all', isAuthenticated, async (req, res) => {
   try {
     const userId = (req.user as any).id;
     
-    // Delete all characters for this user
+    // Get all character IDs for this user first
+    const userCharacters = await db.select({ id: characterSheets.id })
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, userId));
+    
+    const characterIds = userCharacters.map(c => c.id);
+    
+    if (characterIds.length === 0) {
+      return res.json({
+        success: true,
+        deleted: 0,
+        message: 'No characters to delete'
+      });
+    }
+    
+    // Delete all related records first (to avoid foreign key constraints)
+    // Delete in parallel for better performance
+    await Promise.all([
+      // Delete channel character mappings
+      ...characterIds.map(id => 
+        db.delete(channelCharacterMappings).where(eq(channelCharacterMappings.characterId, id))
+      ),
+      // Delete character stats
+      ...characterIds.map(id =>
+        db.delete(characterStats).where(eq(characterStats.characterId, id))
+      ),
+      // Delete activity feed
+      ...characterIds.map(id =>
+        db.delete(activityFeed).where(eq(activityFeed.characterId, id))
+      ),
+      // Delete character memories
+      ...characterIds.map(id =>
+        db.delete(characterMemories).where(eq(characterMemories.characterId, id))
+      ),
+      // Delete character relationships
+      ...characterIds.map(id =>
+        db.delete(characterRelationships).where(eq(characterRelationships.characterId, id))
+      )
+    ]);
+    
+    // Now delete the characters themselves
     const deleted = await db.delete(characterSheets)
       .where(eq(characterSheets.userId, userId))
       .returning();
