@@ -213,6 +213,12 @@ export function ProfileSettings() {
 
       if (!previewResponse.ok) {
         const data = await previewResponse.json()
+        
+        // Check if it's a reconnection required error
+        if (data.reconnectRequired || previewResponse.status === 401) {
+          throw new Error(data.error || 'PathCompanion session expired. Please disconnect and reconnect your PathCompanion account.')
+        }
+        
         throw new Error(data.error || 'Failed to check for conflicts')
       }
 

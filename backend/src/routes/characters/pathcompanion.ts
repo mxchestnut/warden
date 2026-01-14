@@ -969,12 +969,24 @@ router.get('/import-preview', isAuthenticated, async (req, res) => {
 
     if (!user.pathCompanionSessionTicket) {
       return res.status(400).json({
-        error: 'No PathCompanion account connected.'
+        error: 'No PathCompanion account connected. Please reconnect your PathCompanion account in settings.'
       });
     }
 
     // Get user data from PathCompanion
-    const userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+    let userData;
+    try {
+      userData = await PlayFabService.getUserData(user.pathCompanionSessionTicket);
+    } catch (apiError: any) {
+      // If session expired, return helpful error message
+      if (apiError?.message?.includes('Must be logged in') || apiError?.message?.includes('SessionTicket')) {
+        return res.status(401).json({
+          error: 'PathCompanion session expired. Please reconnect your PathCompanion account in settings.',
+          reconnectRequired: true
+        });
+      }
+      throw apiError;
+    }
 
     // Filter to character entries
     const characterKeys = Object.keys(userData)
