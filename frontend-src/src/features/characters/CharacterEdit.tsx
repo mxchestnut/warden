@@ -364,7 +364,7 @@ export function CharacterEdit() {
                           const formData = new FormData();
                           formData.append('avatar', file);
 
-                          const response = await fetch('http://localhost:3000/api/characters/upload-avatar', {
+                          const response = await fetch(`${API_URL}/api/characters/upload-avatar`, {
                             method: 'POST',
                             credentials: 'include',
                             body: formData
