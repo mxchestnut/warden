@@ -166,7 +166,7 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isProduction ? 100 : 1000, // Higher limit for dev
+  max: isProduction ? 500 : 1000, // Increased to 500 for production (was 100)
   standardHeaders: true,
   legacyHeaders: false
 });
