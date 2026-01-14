@@ -402,15 +402,12 @@ router.get('/me', (req, res) => {
 
   if (req.isAuthenticated()) {
     const user = req.user as any;
-    console.log('GET /me - User keys:', Object.keys(user));
-    console.log('GET /me - User.accountCode:', user.accountCode);
-    console.log('GET /me - User.account_code:', (user as any).account_code);
-    console.log('GET /me - User.isAdmin:', user.isAdmin);
     
-    // Disable caching for this endpoint
+    // Disable ALL caching for this endpoint - must be BEFORE res.json()
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
+    res.removeHeader('ETag'); // Remove ETag to prevent 304 responses
     
     const responseData = {
       user: {
@@ -423,7 +420,7 @@ router.get('/me', (req, res) => {
       }
     };
     
-    console.log('GET /me - Sending response:', JSON.stringify(responseData));
+    console.log('GET /me - Returning accountCode:', responseData.user.accountCode);
     res.json(responseData);
   } else {
     res.status(401).json({ error: 'Not authenticated' });
