@@ -398,31 +398,33 @@ router.get('/me', (req, res) => {
     });
   }
 
-  console.log('GET /me - Cookies received:', req.headers.cookie);
-  console.log('GET /me - Session ID:', req.sessionID);
-  console.log('GET /me - Session:', req.session);
-  console.log('GET /me - User:', req.user);
   console.log('GET /me - isAuthenticated:', req.isAuthenticated());
 
   if (req.isAuthenticated()) {
     const user = req.user as any;
-    console.log('GET /me - Returning user with accountCode:', user.accountCode);
+    console.log('GET /me - User keys:', Object.keys(user));
+    console.log('GET /me - User.accountCode:', user.accountCode);
+    console.log('GET /me - User.account_code:', (user as any).account_code);
+    console.log('GET /me - User.isAdmin:', user.isAdmin);
     
     // Disable caching for this endpoint
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    res.json({
+    const responseData = {
       user: {
         id: user.id,
-        accountCode: user.accountCode,
+        accountCode: user.accountCode || (user as any).account_code,
         username: user.username,
         isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,
         pathCompanionUsername: user.pathCompanionUsername
       }
-    });
+    };
+    
+    console.log('GET /me - Sending response:', JSON.stringify(responseData));
+    res.json(responseData);
   } else {
     res.status(401).json({ error: 'Not authenticated' });
   }
