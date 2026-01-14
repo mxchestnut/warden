@@ -148,6 +148,18 @@ export function CharacterEdit() {
   const characterId = pathParts[2] !== 'new' ? parseInt(pathParts[2]) : null
   const isNew = !characterId
 
+  // Helper to get CSRF token
+  const getCsrfToken = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/csrf-token`, { credentials: 'include' })
+      const data = await response.json()
+      return data.csrfToken
+    } catch (err) {
+      console.error('Failed to get CSRF token:', err)
+      return null
+    }
+  }
+
   useEffect(() => {
     loadData()
   }, [])
@@ -361,12 +373,20 @@ export function CharacterEdit() {
                         }
 
                         try {
+                          const csrfToken = await getCsrfToken();
+                          if (!csrfToken) {
+                            throw new Error('Failed to get CSRF token');
+                          }
+
                           const formData = new FormData();
                           formData.append('avatar', file);
 
                           const response = await fetch(`${API_URL}/api/characters/upload-avatar`, {
                             method: 'POST',
                             credentials: 'include',
+                            headers: {
+                              'x-csrf-token': csrfToken
+                            },
                             body: formData
                           });
 
