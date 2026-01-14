@@ -1,5 +1,5 @@
 import { Clock } from 'lucide-react'
-import { Navigation } from '../components/Navigation'
+import { Navigation } from '../components/ui/Navigation'
 import { authService } from '../services/auth'
 
 export default function PendingApproval() {

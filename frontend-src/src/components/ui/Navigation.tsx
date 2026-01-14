@@ -9,7 +9,6 @@ import {
   Settings
 } from 'lucide-react'
 import { User, authService } from '../../services/auth'
-import NotificationBell from './NotificationBell'
 
 interface NavigationProps {
   user: User | null
@@ -76,8 +75,6 @@ export function Navigation({ user, currentPage }: NavigationProps) {
                 <Settings className="w-5 h-5" />
                 <span>Settings</span>
               </button>
-
-              <NotificationBell />
 
               <button 
                 onClick={handleLogout}
