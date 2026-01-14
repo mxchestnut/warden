@@ -838,6 +838,9 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
           results.success.push({ id: characterId, name: character.characterName, action: 'updated' });
         } else if (nameMatch && decision === 'merge') {
           // Merge with existing character by name
+          // Preserve existing avatar if PathCompanion doesn't have one
+          const avatarUrl = basicInfo.avatarUrl || nameMatch.avatarUrl;
+          
           await db.update(characterSheets)
             .set({
               strength: abilities.strength,
@@ -852,7 +855,7 @@ router.post('/import-all', isAuthenticated, async (req, res) => {
               alignment: basicInfo.alignment,
               deity: basicInfo.deity,
               size: basicInfo.size,
-              avatarUrl: basicInfo.avatarUrl,
+              avatarUrl: avatarUrl,
               currentHp: combatStats.currentHp,
               maxHp: combatStats.maxHp,
               tempHp: combatStats.tempHp,
