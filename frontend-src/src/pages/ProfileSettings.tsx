@@ -148,6 +148,17 @@ export function ProfileSettings() {
     }
   }
 
+  const getCsrfToken = async () => {
+    try {
+      const response = await fetch('/api/csrf-token', { credentials: 'include' })
+      const data = await response.json()
+      return data.csrfToken
+    } catch (err) {
+      console.error('Failed to get CSRF token:', err)
+      return null
+    }
+  }
+
   const importAllPathCompanion = async () => {
     if (!user?.pathCompanionConnected) {
       setError('Please connect your PathCompanion account first')
@@ -163,9 +174,17 @@ export function ProfileSettings() {
       setError(null)
       setSuccess(null)
 
+      const csrfToken = await getCsrfToken()
+      if (!csrfToken) {
+        throw new Error('Failed to get CSRF token')
+      }
+
       const response = await fetch('/api/pathcompanion/import-all', {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          'x-csrf-token': csrfToken
+        }
       })
 
       if (!response.ok) {
@@ -205,9 +224,17 @@ export function ProfileSettings() {
         throw new Error('Invalid Tupperbox format. Expected "tuppers" array.')
       }
 
+      const csrfToken = await getCsrfToken()
+      if (!csrfToken) {
+        throw new Error('Failed to get CSRF token')
+      }
+
       const response = await fetch('/api/characters/import-tupperbox', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         credentials: 'include',
         body: JSON.stringify({ tuppers: parsedData.tuppers })
       })
