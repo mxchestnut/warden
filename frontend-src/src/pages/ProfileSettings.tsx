@@ -124,9 +124,21 @@ export function ProfileSettings() {
 
   const copyAccountId = async () => {
     if (user?.id) {
-      await navigator.clipboard.writeText(user.id.toString())
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      try {
+        await navigator.clipboard.writeText(user.id.toString())
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        console.log('Copied Account ID:', user.id)
+      } catch (err) {
+        console.error('Failed to copy:', err)
+        // Fallback: try to select the text so user can manually copy
+        const input = document.querySelector('input[readonly]') as HTMLInputElement
+        if (input) {
+          input.select()
+        }
+      }
+    } else {
+      console.error('No user ID available to copy')
     }
   }
 
