@@ -10,7 +10,7 @@ import {
   characterMemories,
   characterRelationships
 } from '../../db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, inArray } from 'drizzle-orm';
 import { isAuthenticated } from '../../middleware/auth';
 import { sendRollToDiscord } from '../../services/discordBot';
 import { deleteFromS3 } from '../../config/s3';
@@ -1161,6 +1161,8 @@ router.delete('/delete-all', isAuthenticated, async (req, res) => {
     
     const characterIds = userCharacters.map(c => c.id);
     
+    console.log(`Delete-all: Found ${characterIds.length} characters for user ${userId}:`, characterIds);
+    
     if (characterIds.length === 0) {
       return res.json({
         success: true,
@@ -1170,34 +1172,24 @@ router.delete('/delete-all', isAuthenticated, async (req, res) => {
     }
     
     // Delete all related records first (to avoid foreign key constraints)
-    // Delete in parallel for better performance
+    console.log('Delete-all: Deleting related records...');
+    
     await Promise.all([
-      // Delete channel character mappings
-      ...characterIds.map(id => 
-        db.delete(channelCharacterMappings).where(eq(channelCharacterMappings.characterId, id))
-      ),
-      // Delete character stats
-      ...characterIds.map(id =>
-        db.delete(characterStats).where(eq(characterStats.characterId, id))
-      ),
-      // Delete activity feed
-      ...characterIds.map(id =>
-        db.delete(activityFeed).where(eq(activityFeed.characterId, id))
-      ),
-      // Delete character memories
-      ...characterIds.map(id =>
-        db.delete(characterMemories).where(eq(characterMemories.characterId, id))
-      ),
-      // Delete character relationships
-      ...characterIds.map(id =>
-        db.delete(characterRelationships).where(eq(characterRelationships.characterId, id))
-      )
+      db.delete(channelCharacterMappings).where(inArray(channelCharacterMappings.characterId, characterIds)),
+      db.delete(characterStats).where(inArray(characterStats.characterId, characterIds)),
+      db.delete(activityFeed).where(inArray(activityFeed.characterId, characterIds)),
+      db.delete(characterMemories).where(inArray(characterMemories.characterId, characterIds)),
+      db.delete(characterRelationships).where(inArray(characterRelationships.characterId, characterIds))
     ]);
+    
+    console.log('Delete-all: Related records deleted, now deleting characters...');
     
     // Now delete the characters themselves
     const deleted = await db.delete(characterSheets)
       .where(eq(characterSheets.userId, userId))
       .returning();
+
+    console.log(`Delete-all: Successfully deleted ${deleted.length} characters`);
 
     res.json({
       success: true,
@@ -1205,7 +1197,7 @@ router.delete('/delete-all', isAuthenticated, async (req, res) => {
       message: `Successfully deleted ${deleted.length} character(s)`
     });
   } catch (error) {
-    console.error('Error deleting all characters:', error);
+    console.error('Error in delete-all endpoint:', error);
     res.status(500).json({ error: 'Failed to delete characters' });
   }
 });
