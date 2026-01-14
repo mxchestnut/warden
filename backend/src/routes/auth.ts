@@ -174,7 +174,17 @@ router.post('/register', registerLimiter, async (req, res) => {
       accountCode
     }).returning();
 
-    res.json({ message: 'User created successfully', userId: newUser.id });
+    res.json({ 
+      message: 'User created successfully', 
+      user: {
+        id: newUser.id,
+        accountCode: newUser.accountCode,
+        username: newUser.username,
+        isAdmin: newUser.isAdmin || false,
+        pathCompanionConnected: false,
+        pathCompanionUsername: null
+      }
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
