@@ -406,15 +406,27 @@ router.get('/me', (req, res) => {
 
   if (req.isAuthenticated()) {
     const user = req.user as any;
-    res.json({
+    
+    // Disable caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    const responseData = {
       user: {
         id: user.id,
+        accountCode: user.accountCode || user.account_code,
         username: user.username,
         isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,
         pathCompanionUsername: user.pathCompanionUsername
-      }
-    });
+      },
+      _timestamp: Date.now()
+    };
+    
+    console.log('GET /me (auth.ts) - Returning accountCode:', responseData.user.accountCode);
+    res.set('ETag', undefined as any);
+    res.json(responseData);
   } else {
     res.status(401).json({ error: 'Not authenticated' });
   }
