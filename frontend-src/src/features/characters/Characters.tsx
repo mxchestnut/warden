@@ -100,7 +100,7 @@ export function Characters() {
   }
 
   const handleEditCharacter = (id: number) => {
-    window.location.href = `/characters/${id}/edit`
+    window.location.href = `/characters/${id}`
   }
 
   const handleDeleteCharacter = async (id: number) => {
