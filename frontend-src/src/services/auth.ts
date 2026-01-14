@@ -10,7 +10,8 @@ export interface User {
   email?: string
   isAdmin: boolean
   playfabId?: string
-  pathcompanionUsername?: string
+  pathCompanionUsername?: string
+  pathCompanionConnected?: boolean
   pathCompanionConnectedAt?: string
   discordUserId?: string
 }

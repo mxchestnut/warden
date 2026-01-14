@@ -11,7 +11,7 @@ interface UserData {
   username: string
   isAdmin: boolean
   pathCompanionConnected: boolean
-  pathCompanionUsername: string | null
+  pathCompanionUsername?: string
 }
 
 export function ProfileSettings() {
@@ -63,8 +63,8 @@ export function ProfileSettings() {
       if (currentUser) {
         setUser({
           ...currentUser,
-          pathCompanionConnected: !!currentUser.pathcompanionUsername,
-          pathCompanionUsername: currentUser.pathcompanionUsername || ''
+          pathCompanionConnected: currentUser.pathCompanionConnected || !!currentUser.pathCompanionUsername,
+          pathCompanionUsername: currentUser.pathCompanionUsername
         })
       }
     } catch (err) {
