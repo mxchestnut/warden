@@ -403,11 +403,10 @@ router.get('/me', (req, res) => {
   if (req.isAuthenticated()) {
     const user = req.user as any;
     
-    // Disable ALL caching for this endpoint - must be BEFORE res.json()
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    // Disable ALL caching for this endpoint
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    res.removeHeader('ETag'); // Remove ETag to prevent 304 responses
     
     const responseData = {
       user: {
@@ -417,10 +416,14 @@ router.get('/me', (req, res) => {
         isAdmin: user.isAdmin || false,
         pathCompanionConnected: !!user.pathCompanionSessionTicket,
         pathCompanionUsername: user.pathCompanionUsername
-      }
+      },
+      _timestamp: Date.now() // Force cache bust
     };
     
     console.log('GET /me - Returning accountCode:', responseData.user.accountCode);
+    
+    // Send without ETag
+    res.set('ETag', undefined as any);
     res.json(responseData);
   } else {
     res.status(401).json({ error: 'Not authenticated' });
