@@ -73,19 +73,6 @@ export function Navigation({ user, currentPage }: NavigationProps) {
                 <>
                   {/* Quick Links */}
                   <button 
-                    onClick={() => navigateTo('/feed')}
-                    className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/feed') 
-                        ? 'text-white font-medium' 
-                        : 'text-white hover:bg-opacity-20'
-                    }`}
-                    style={isActive('/feed') ? { backgroundColor: '#B34B0C' } : {}}
-                  >
-                    <Home className="w-5 h-5" />
-                    <span>Feed</span>
-                  </button>
-
-                  <button 
                     onClick={() => navigateTo('/characters')}
                     className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                       isActive('/characters') 
@@ -100,6 +87,29 @@ export function Navigation({ user, currentPage }: NavigationProps) {
 
                   {/* Notifications */}
                   {user && <NotificationBell />}
+
+                  {/* Profile & Settings */}
+                  <button
+                    onClick={() => navigateTo('/profile-settings')}
+                    className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive('/profile-settings')
+                        ? 'text-white font-medium'
+                        : 'text-white hover:bg-opacity-20'
+                    }`}
+                    style={isActive('/profile-settings') ? { backgroundColor: '#B34B0C' } : {}}
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span>Profile & Settings</span>
+                  </button>
+
+                  {/* Log Out */}
+                  <button
+                    onClick={() => authService.logout()}
+                    className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-white hover:bg-opacity-20"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Log Out</span>
+                  </button>
                 </>
               ) : (
                 <button 
@@ -158,26 +168,6 @@ export function Navigation({ user, currentPage }: NavigationProps) {
           {/* Navigation Links */}
           <nav className="flex-1 overflow-y-auto p-6">
             <div className="space-y-1">
-              {/* Main Navigation */}
-              <div className="mb-6">
-                <p className="px-3 text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#B3B2B0' }}>
-                  Main
-                </p>
-                
-                <button 
-                  onClick={() => navigateTo('/feed')}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                    isActive('/feed')
-                      ? 'font-medium text-white'
-                      : 'text-white hover:bg-opacity-20'
-                  }`}
-                  style={isActive('/feed') ? { backgroundColor: '#B34B0C' } : {}}
-                >
-                  <Home className="w-5 h-5" />
-                  <span>Feed</span>
-                </button>
-              </div>
-
               {/* Characters Section */}
               <div className="mb-6">
                 <p className="px-3 text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#B3B2B0' }}>
