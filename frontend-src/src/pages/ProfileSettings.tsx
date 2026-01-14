@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link as LinkIcon } from 'lucide-react'
+import { Link as LinkIcon, Copy, Check } from 'lucide-react'
 import { authService } from '../services/auth'
 import { Navigation } from '../components/ui/Navigation'
 
@@ -25,6 +25,9 @@ export function ProfileSettings() {
   const [pcUsername, setPcUsername] = useState('')
   const [pcPassword, setPcPassword] = useState('')
   const [pcConnecting, setPcConnecting] = useState(false)
+
+  // Copy state
+  const [copied, setCopied] = useState(false)
 
   // Removed Discord bot state - no longer needed
 
@@ -116,6 +119,14 @@ export function ProfileSettings() {
       setError(err instanceof Error ? err.message : 'Failed to disconnect PathCompanion')
     } finally {
       setPcConnecting(false)
+    }
+  }
+
+  const copyAccountId = async () => {
+    if (user?.id) {
+      await navigator.clipboard.writeText(user.id.toString())
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -236,20 +247,49 @@ export function ProfileSettings() {
                 <label style={{ display: 'block', color: '#B3B2B0', marginBottom: '0.5rem' }}>
                   Account ID
                 </label>
-                <input
-                  type="text"
-                  value={user.id}
-                  disabled
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #666',
-                    backgroundColor: '#333',
-                    color: '#888',
-                    cursor: 'not-allowed'
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={user.id}
+                    readOnly
+                    onClick={(e) => e.currentTarget.select()}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      paddingRight: '3rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid #666',
+                      backgroundColor: '#333',
+                      color: '#D4AF37',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem',
+                      cursor: 'text',
+                      userSelect: 'all'
+                    }}
+                  />
+                  <button
+                    onClick={copyAccountId}
+                    style={{
+                      position: 'absolute',
+                      right: '0.5rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundColor: copied ? '#065F46' : '#B34B0C',
+                      color: 'white',
+                      padding: '0.5rem',
+                      borderRadius: '0.375rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      transition: 'background-color 0.2s'
+                    }}
+                    title="Copy Account ID"
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
                 <p style={{ color: '#B3B2B0', fontSize: '0.875rem', marginTop: '0.5rem' }}>
                   Use this ID in Discord to sync your profile with the Warden bot
                 </p>
