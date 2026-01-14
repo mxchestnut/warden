@@ -4,8 +4,8 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { db } from '../../db';
-import { users } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { users, discordConnectionCodes } from '../../db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { isAuthenticated } from '../../middleware/auth';
 
 const router = Router();
@@ -507,6 +507,110 @@ router.post('/discord-settings', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error('Failed to save Discord settings:', error);
     res.status(500).json({ error: 'Failed to save Discord settings' });
+  }
+});
+
+// Delete account endpoint
+router.post('/delete-account', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Password required' });
+    }
+
+    // Verify password
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    // Delete user (CASCADE will delete related data)
+    await db.delete(users).where(eq(users.id, userId));
+
+    // Log out
+    req.logout((err) => {
+      if (err) console.error('Logout error:', err);
+    });
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete account:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/generate-discord-code:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Generate a one-time code for Discord account linking
+ *     description: Creates a unique code that expires in 15 minutes for secure Discord connection
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Code generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                   example: A1B2C3D4E5F6
+ *                 expiresAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: 2026-01-13T12:15:00.000Z
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/generate-discord-code', isAuthenticated, async (req, res) => {
+  try {
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Invalidate any existing unused codes for this user
+    await db
+      .update(discordConnectionCodes)
+      .set({ used: true })
+      .where(
+        and(
+          eq(discordConnectionCodes.userId, userId),
+          eq(discordConnectionCodes.used, false)
+        )
+      );
+
+    // Generate a random 6-byte code (12 hex characters)
+    const code = crypto.randomBytes(6).toString('hex').toUpperCase();
+    
+    // Code expires in 15 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Store the code
+    await db.insert(discordConnectionCodes).values({
+      userId,
+      code,
+      expiresAt
+    });
+
+    res.json({ code, expiresAt });
+  } catch (error) {
+    console.error('Failed to generate Discord connection code:', error);
+    res.status(500).json({ error: 'Failed to generate connection code' });
   }
 });
 

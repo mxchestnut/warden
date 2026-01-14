@@ -715,3 +715,20 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     references: [users.id]
   })
 }));
+
+// Discord connection codes (one-time use for account linking)
+export const discordConnectionCodes = pgTable('discord_connection_codes', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  code: text('code').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  used: boolean('used').default(false).notNull()
+});
+
+export const discordConnectionCodesRelations = relations(discordConnectionCodes, ({ one }) => ({
+  user: one(users, {
+    fields: [discordConnectionCodes.userId],
+    references: [users.id]
+  })
+}));

@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Message, EmbedBuilder, Webhook, TextChannel, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, Partials } from 'discord.js';
 import { db } from '../db';
-import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes, loreEntries, channelLoreTags, characterRelationships } from '../db/schema';
+import { channelCharacterMappings, characterSheets, users, knowledgeBase, characterStats, activityFeed, hallOfFame, gmNotes, gameTime, botSettings, hcList, characterMemories, prompts, tropes, loreEntries, channelLoreTags, characterRelationships, discordConnectionCodes } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as PlayFabService from './playfab';
 import * as GeminiService from './gemini';
@@ -1275,66 +1275,82 @@ export async function refreshPathCompanionSession(user: any): Promise<string> {
 }
 
 async function handleConnect(message: Message, args: string[]) {
-  // Delete the message immediately to protect credentials
+  // Delete the message immediately for security
   await message.delete().catch(() => {});
 
-  if (args.length < 2) {
-    await message.author.send('❌ **Usage:** `!connect <username> <password>`\n\n' +
-      '⚠️ **Security Note:** This command has been deleted from the channel. Your credentials are only used for authentication.\n\n' +
-      '**Example:** `!connect myusername mypassword`\n\n' +
-      '🔗 **Linking your Discord account** will allow you to:\n' +
-      '• Use all your characters in Discord\n' +
-      '• Roll dice with your character stats\n' +
-      '• Proxy messages as your characters\n\n' +
+  if (args.length !== 1) {
+    await message.author.send('❌ **Usage:** `!connect <code>`\n\n' +
+      '🔐 **How to connect your Discord account:**\n' +
+      '1. Go to https://warden.my/settings\n' +
+      '2. Click "Generate Discord Connection Code"\n' +
+      '3. Copy the code and use it here: `!connect YOUR_CODE`\n\n' +
+      '⚠️ **Security Note:** Codes expire in 15 minutes and can only be used once.\n\n' +
       '💡 Don\'t have an account? Create one at https://warden.my');
     return;
   }
 
-  const username = args[0];
-  const password = args.slice(1).join(' '); // Allow passwords with spaces
+  const code = args[0].toUpperCase();
 
   try {
     // Send a DM to the user for privacy
     await message.author.send('🔐 Connecting to warden.my...');
 
-    // Authenticate with backend
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
+    // Find valid code in database
+    const [codeRecord] = await db.select()
+      .from(discordConnectionCodes)
+      .innerJoin(users, eq(discordConnectionCodes.userId, users.id))
+      .where(and(
+        eq(discordConnectionCodes.code, code),
+        eq(discordConnectionCodes.used, false),
+        sql`${discordConnectionCodes.expiresAt} > NOW()`
+      ));
 
-    const response = await axios.post(`${API_URL}/api/discord/login`, {
-      username,
-      password,
-      discordUserId: message.author.id
-    });
-    const { user, characters } = response.data;
+    if (!codeRecord) {
+      await message.author.send('❌ **Invalid or expired code.**\n\n' +
+        'Please generate a new code at https://warden.my/settings\n\n' +
+        '⏱️ Connection codes expire after 15 minutes and can only be used once.');
+      return;
+    }
+
+    // Link Discord ID to user account
+    await db.update(users)
+      .set({ discordUserId: message.author.id })
+      .where(eq(users.id, codeRecord.discord_connection_codes.userId));
+
+    // Mark code as used
+    await db.update(discordConnectionCodes)
+      .set({ used: true })
+      .where(eq(discordConnectionCodes.id, codeRecord.discord_connection_codes.id));
+
+    // Get user's characters
+    const userCharacters = await db.select()
+      .from(characterSheets)
+      .where(eq(characterSheets.userId, codeRecord.discord_connection_codes.userId));
+
+    const user = codeRecord.users;
 
     await message.author.send('✅ **Successfully connected!**\n\n' +
       `🎭 Account: **${user.username}**\n` +
-      `🎲 Characters: **${characters.length}**\n` +
-      (user.pathCompanionConnected ? '🔗 PathCompanion: **Connected**\n' : '') +
+      `🎲 Characters: **${userCharacters.length}**\n` +
+      (user.pathCompanionUsername ? '🔗 PathCompanion: **Connected**\n' : '') +
       '\n**Your available characters:**\n' +
-      characters.map((c: any) => `• ${c.name}${c.isPathCompanion ? ' (PathCompanion)' : ''}`).join('\n') +
+      (userCharacters.length > 0 
+        ? userCharacters.map((c: any) => `• ${c.name} (Level ${c.level || '?'})`).join('\n')
+        : '• No characters yet - create one at https://warden.my/characters') +
       '\n\n**Next steps:**\n' +
       '• Use `!setchar <name>` in a channel to link it to a character\n' +
       '• Use `!roll <stat>` to roll dice\n' +
       '• Type `CharName: message` to proxy as that character\n' +
       '• Use `!help` for more commands');
 
-    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Warden user: ${username}`);
+    console.log(`Discord account ${message.author.tag} (${message.author.id}) linked to Warden user: ${user.username} (ID: ${user.id})`);
 
   } catch (error: any) {
     console.error('Discord connect error:', error);
 
-    let errorMsg = 'Unknown error occurred';
-    if (error.response?.data?.error) {
-      errorMsg = error.response.data.error;
-    } else if (error.message) {
-      errorMsg = error.message;
-    }
-
     await message.author.send('❌ **Failed to connect.**\n\n' +
-      `Error: ${errorMsg}\n\n` +
-      'Please check your username and password and try again.\n\n' +
-      '💡 Need help? Visit https://warden.my to manage your account.');
+      'An unexpected error occurred. Please try generating a new code at https://warden.my/settings\n\n' +
+      '💡 Need help? Contact support or visit https://warden.my');
   }
 }
 
