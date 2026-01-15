@@ -88,39 +88,7 @@
 
 ---
 
-## 🎮 GM Tools (FREE)
-
-### `!time [set/add/show] [value]`
-**Description:** Manage in-game time tracking  
-**Examples:**
-- `!time show` - Display current game time
-- `!time set 1/1/4724 12:00` - Set game time to specific date/time
-- `!time add 1h` - Add 1 hour to game time
-- `!time add 1d` - Add 1 day to game time
-
-**Notes:** Admin only. Time format: `M/D/YYYY HH:MM`
-
-### `!note <character> <content>`
-**Description:** Create GM notes for characters/NPCs  
-**Example:** `!note Villain Secretly working for the king`  
-**Notes:** Admin only. Viewable only by GMs
-
-### `!npc <name> <description>`
-**Description:** Create an NPC entry  
-**Example:** `!npc Shopkeeper Friendly merchant in the market`  
-**Notes:** Admin only
-
-### `!music`
-**Description:** Display currently playing music/ambiance  
-**Notes:** Integrated with bot settings
-
-### `!hall [add/remove/list/clear]`
-**Description:** Manage Hall of Fame (starred messages)  
-**Examples:**
-- `!hall list` - View all Hall of Fame entries
-- `!hall clear` - Remove all entries (Admin only)
-
-**Notes:** Messages with 3+ ⭐ reactions auto-added to Hall of Fame
+## ⚙️ Admin Commands
 
 ### `!botset <key> <value>`
 **Description:** Configure bot settings for the server  
@@ -133,7 +101,32 @@
 **Example:** `!botset rpchannel #roleplay`  
 **Notes:** Admin only
 
-### `!hc [add/remove/list] [character]`
+---
+
+## ⭐ RP Tier Commands (PREMIUM)
+
+**🔒 Requires RP tier subscription** - Subscribe at https://warden.my/settings
+
+### � GM Tools
+
+#### `!note <character> <content>`
+**Description:** Create GM notes for characters/NPCs  
+**Example:** `!note Villain Secretly working for the king`  
+**Notes:** Admin only. Viewable only by GMs
+
+#### `!music`
+**Description:** Display currently playing music/ambiance  
+**Notes:** Integrated with bot settings
+
+#### `!hall [add/remove/list/clear]`
+**Description:** Manage Hall of Fame (starred messages)  
+**Examples:**
+- `!hall list` - View all Hall of Fame entries
+- `!hall clear` - Remove all entries (Admin only)
+
+**Notes:** Messages with 3+ ⭐ reactions auto-added to Hall of Fame
+
+#### `!hc [add/remove/list] [character]`
 **Description:** Manage hardcore (permadeath) character list  
 **Examples:**
 - `!hc add Gandalf` - Add character to hardcore list
@@ -142,23 +135,19 @@
 
 **Notes:** Adds ⚠️ warnings when hardcore characters roll
 
-### `!weeklyreport`
+#### `!weeklyreport`
 **Description:** Generate weekly activity report  
 **Shows:** Top posters, rollers, and activity stats for past 7 days  
 **Notes:** Admin recommended
 
-### `!monthlyreport`
+#### `!monthlyreport`
 **Description:** Generate monthly activity report  
 **Shows:** Top posters, rollers, and activity stats for past 30 days  
 **Notes:** Admin recommended
 
 ---
 
-## ⭐ RP Tier Commands (PREMIUM)
-
-**🔒 Requires RP tier subscription** - Subscribe at https://warden.my/settings
-
-### 🎨 RP Prompts & Tropes
+### �🎨 RP Prompts & Tropes
 
 #### `!prompt [view/add/remove/list] [content]`
 **Description:** Manage RP prompts for daily inspiration  
@@ -292,11 +281,14 @@
 - `!setchar`, `!profile`, `!connect`, `!syncall`
 - `!roll`, `!CharName stat`
 - `!stats`, `!leaderboard`, `!postleaderboard`
-- `!time`, `!note`, `!npc`, `!music`, `!hall`, `!botset`, `!hc`
-- `!weeklyreport`, `!monthlyreport`
 - Character proxying: `CharName: message`
 
+### Admin Commands
+- `!botset` - Configure bot channels and settings
+
 ### RP Tier Commands (Premium Only) 🔒
+- `!note`, `!music`, `!hall`, `!hc` - GM tools
+- `!weeklyreport`, `!monthlyreport` - Activity reports
 - `!prompt`, `!trope`, `!promptsettings`
 - `!ask`, `!learn`, `!learnurl`
 - `!feat`, `!spell`
@@ -311,10 +303,6 @@
 
 ### Typical Session Flow
 ```
-# GM sets the scene
-GM: !time show
-Bot: Current time: Fireday, 3rd of Gozran, 4724 AR - 14:30
-
 # Player sets active character
 Player: !setchar Gandalf
 
@@ -325,10 +313,6 @@ Bot: [Webhook as Gandalf with avatar]
 # Player rolls perception
 Player: !Gandalf perception
 Bot: 🎲 Gandalf rolls Perception: 1d20 (15) +8 = 23
-
-# GM advances time
-GM: !time add 1h
-Bot: ✅ Time advanced by 1 hour. Current time: Fireday, 3rd of Gozran, 4724 AR - 15:30
 
 # RP tier user asks AI
 Player: !ask What do I know about this temple?
@@ -341,18 +325,12 @@ Bot: 🎲 Rolled 1d20 (advantage): [12, 18] = 18
 
 ### GM Setup
 ```
-# Set up bot channels
+# Set up bot channels (Admin)
 !botset rpchannel #roleplay
 !botset hallchannel #hall-of-fame
 !botset leaderboardchannel #stats
 
-# Set game time
-!time set 1/3/4724 14:30
-
-# Add NPCs
-!npc Baron Blackwood The lord of Shadowkeep, suspicious and paranoid
-
-# Mark hardcore campaign
+# Mark hardcore campaign (RP tier)
 !hc add Gandalf
 !hc add Aragorn
 ```

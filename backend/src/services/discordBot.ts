@@ -191,7 +191,7 @@ async function handleCommands(message: Message, content: string, client: Client)
 
     // Check if this is a known command first
     const knownCommands = ['setchar', 'char', 'roll', 'help', 'profile', 'connect', 'syncall', 'stats',
-      'leaderboard', 'time', 'note', 'npc', 'music', 'hall', 'botset', 'hc', 'weeklyreport',
+      'leaderboard', 'note', 'music', 'hall', 'botset', 'hc', 'weeklyreport',
       'monthlyreport', 'postleaderboard', 'prompt', 'trope', 'promptsettings',
       'ask', 'learn', 'learnurl', 'feat', 'spell', 'memory', 'lore', 'set'];
     const isKnownCommand = knownCommands.includes(potentialName.toLowerCase());
@@ -259,14 +259,8 @@ async function handleCommands(message: Message, content: string, client: Client)
         break;
 
       // GM tools
-      case 'time':
-        await handleTime(message, args);
-        break;
       case 'note':
         await handleNote(message, args);
-        break;
-      case 'npc':
-        await handleNPC(message, args);
         break;
       case 'music':
         await handleMusic(message);
@@ -1502,13 +1496,12 @@ async function handleHelp(message: Message, botType: 'free' | 'premium' | 'unifi
       .setTitle('✨ Write Pretend Bot Commands')
       .setDescription('Your AI-powered roleplay companion!')
       .addFields(
-        { name: '🔗 Account Setup', value: '`!connect <username> <password>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
+        { name: '🔗 Account Setup', value: '`!connect <code>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
         { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
         { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards', inline: false },
-        { name: '⭐ Hall of Fame', value: 'React with ⭐ to messages (10+ stars → Hall of Fame!)\n`!hall` - Recent Hall of Fame\n`!hall top` - Top 20 starred messages', inline: false },
-        { name: '🛠️ GM Tools', value: '`!time [set <date>]` - Game time tracking\n`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - HC list\n`!npc <name>` - Generate quick NPC\n`!music` - Mood music suggestion', inline: false },
-        { name: '⭐ RP Tier Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at warden.my*', inline: false },
-        { name: '⚙️ Admin', value: '`!botset` - Set bot announcement channel', inline: false }
+        { name: '⭐ RP Tier - GM Tools', value: '`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - Hardcore list\n`!music` - Mood music suggestion\n`!hall` - Hall of Fame management\n`!weeklyreport` / `!monthlyreport` - Activity reports', inline: false },
+        { name: '⭐ RP Tier - AI Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at warden.my*', inline: false },
+        { name: '⚙️ Admin', value: '`!botset` - Configure bot channels', inline: false }
       )
       .setFooter({ text: 'Visit warden.my to manage characters and upgrade to RP tier!' });
 
