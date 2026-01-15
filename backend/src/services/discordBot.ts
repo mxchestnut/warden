@@ -208,11 +208,8 @@ async function handleCommands(message: Message, content: string, client: Client)
       }
       // Check for relationship pattern: !CharName is OtherName's relationship. | Description
       if (potentialStat.toLowerCase().includes(' is ')) {
-        const tier = await getUserTierFromDiscord(db, message.author.id);
-        if (tier === 'rp') {
-          await handleRelationship(message, potentialName, potentialStat);
-          return;
-        }
+        await handleRelationship(message, potentialName, potentialStat);
+        return;
       }
       // Try to handle as name-based roll
       const handled = await handleNameRoll(message, potentialName, potentialStat);
@@ -287,59 +284,38 @@ async function handleCommands(message: Message, content: string, client: Client)
         await handleHelp(message, 'unified');
         break;
 
-      // === RP TIER COMMANDS (Requires Stripe subscription) ===
-
-      // RP Prompts & Tropes
+      // AI & RP Features
       case 'prompt':
-        if (!await checkRpTier(message)) return;
         await handlePrompt(message, args);
         break;
       case 'trope':
-        if (!await checkRpTier(message)) return;
         await handleTrope(message, args);
         break;
       case 'promptsettings':
-        if (!await checkRpTier(message)) return;
         await handlePromptSettings(message, args);
         break;
-
-      // AI & Knowledge Base
       case 'ask':
-        if (!await checkRpTier(message)) return;
         await handleAsk(message, args);
         break;
       case 'learn':
-        if (!await checkRpTier(message)) return;
         await handleLearn(message, args);
         break;
       case 'learnurl':
-        if (!await checkRpTier(message)) return;
         await handleLearnUrl(message, args);
         break;
-
-      // D&D AI Generation
       case 'feat':
-        if (!await checkRpTier(message)) return;
         await handleFeat(message, args);
         break;
       case 'spell':
-        if (!await checkRpTier(message)) return;
         await handleSpell(message, args);
         break;
-
-      // Character Memories (AI-enhanced)
       case 'memory':
-        if (!await checkRpTier(message)) return;
         await handleMemory(message, args);
         break;
-
-      // World Building Lore (RP tier)
       case 'lore':
-        if (!await checkRpTier(message)) return;
         await handleLore(message, args);
         break;
       case 'set':
-        if (!await checkRpTier(message)) return;
         await handleSet(message, args);
         break;
 
@@ -1490,20 +1466,20 @@ async function handleCharacterUpdate(message: Message, characterName: string) {
 
 async function handleHelp(message: Message, botType: 'free' | 'premium' | 'unified' = 'unified') {
   if (botType === 'unified') {
-    // Write Pretend (unified bot) help
+    // Warden unified bot help
     const embed = new EmbedBuilder()
       .setColor(0xff6b6b)
-      .setTitle('✨ Write Pretend Bot Commands')
-      .setDescription('Your AI-powered roleplay companion!')
+      .setTitle('✨ Warden Bot Commands')
+      .setDescription('Your AI-powered Pathfinder 1E companion!')
       .addFields(
         { name: '🔗 Account Setup', value: '`!connect <code>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
-        { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
+        { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile\n`!CharName is <name>\'s <relationship>` - Define relationships', inline: false },
         { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards', inline: false },
-        { name: '⭐ RP Tier - GM Tools', value: '`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - Headcanon entries\n`!music` - Mood music suggestion\n`!hall` - Hall of Fame management\n`!weeklyreport` / `!monthlyreport` - Activity reports', inline: false },
-        { name: '⭐ RP Tier - AI Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at warden.my*', inline: false },
-        { name: '⚙️ Admin', value: '`!botset` - Configure bot channels', inline: false }
+        { name: '🎮 GM Tools', value: '`!note <add|list>` - GM notes (Admin)\n`!hc <text|list|edit|delete>` - Headcanon entries\n`!music` - Mood music\n`!hall` - Hall of Fame\n`!weeklyreport` / `!monthlyreport` - Activity reports', inline: false },
+        { name: '🤖 AI Features', value: '`!prompt` / `!trope` - RP inspiration\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!feat` / `!spell` - Generate custom content\n`!memory` - Character memories\n`!lore` - World building', inline: false },
+        { name: '⚙️ Admin', value: '`!botset` - Configure bot channels (Admin only)', inline: false }
       )
-      .setFooter({ text: 'Visit warden.my to manage characters and upgrade to RP tier!' });
+      .setFooter({ text: 'Visit warden.my to manage characters!' });
 
     await message.reply({ embeds: [embed] });
   }
