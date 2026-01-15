@@ -3894,13 +3894,6 @@ export async function postLeaderboardToChannel(guildId: string, category: string
 
 async function handlePrompt(message: Message, args: string[]) {
   try {
-    // Check if user has RP tier access
-    const userTier = await getUserTierFromDiscord(db, message.author.id);
-    if (userTier !== 'rp') {
-      await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access prompts, tropes, and advanced RP tools!');
-      return;
-    }
-
     const subcmd = args[0]?.toLowerCase();
 
     if (subcmd === 'random' && args.length > 1) {
@@ -3975,13 +3968,6 @@ async function handlePrompt(message: Message, args: string[]) {
 
 async function handleTrope(message: Message, args: string[]) {
   try {
-    // Check if user has RP tier access
-    const userTier = await getUserTierFromDiscord(db, message.author.id);
-    if (userTier !== 'rp') {
-      await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access prompts, tropes, and advanced RP tools!');
-      return;
-    }
-
     const category = args.join(' ').toLowerCase();
     let tropeList = [];
 
@@ -4029,13 +4015,6 @@ async function handlePromptSettings(message: Message, args: string[]) {
   // Check if user has admin permissions
   if (!isAdmin(message)) {
     await message.reply('❌ Only administrators can modify prompt settings.');
-    return;
-  }
-
-  // Check if user has RP tier access
-  const userTier = await getUserTierFromDiscord(db, message.author.id);
-  if (userTier !== 'rp') {
-    await message.reply('🔒 This feature requires an **RP tier** subscription. Upgrade to access daily prompts and advanced RP tools!');
     return;
   }
 
