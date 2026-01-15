@@ -1499,7 +1499,7 @@ async function handleHelp(message: Message, botType: 'free' | 'premium' | 'unifi
         { name: '🔗 Account Setup', value: '`!connect <code>` - Link Discord account\n`!syncall` - Refresh character list', inline: false },
         { name: '🎭 Characters', value: '`!CharName <stat>` - Roll for any character\n`CharName: message` - Speak as character\n`!setchar <name>` - Link character to channel\n`!profile [name]` - View character profile', inline: false },
         { name: '🎲 Dice & Stats', value: '`!roll <dice>` - Roll dice (e.g., !roll 1d20+5)\n`!stats [character]` - View character stats\n`!leaderboard <type>` - View leaderboards', inline: false },
-        { name: '⭐ RP Tier - GM Tools', value: '`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - Hardcore list\n`!music` - Mood music suggestion\n`!hall` - Hall of Fame management\n`!weeklyreport` / `!monthlyreport` - Activity reports', inline: false },
+        { name: '⭐ RP Tier - GM Tools', value: '`!note <add|list>` - GM notes\n`!hc <text|list|edit|delete>` - Headcanon entries\n`!music` - Mood music suggestion\n`!hall` - Hall of Fame management\n`!weeklyreport` / `!monthlyreport` - Activity reports', inline: false },
         { name: '⭐ RP Tier - AI Features', value: '`!prompt` - Get RP prompts\n`!trope` - Get story tropes\n`!ask <question>` - AI knowledge base\n`!learn <info>` - Teach the AI\n`!learnurl <url>` - Learn from webpages\n`!feat/!spell <name>` - D&D lookups\n`!memory` - Character memories\n`!lore <note> <tag>` - World building notes\n`!set <tag>` - Link channel to lore tag\n*Requires RP tier subscription at warden.my*', inline: false },
         { name: '⚙️ Admin', value: '`!botset` - Configure bot channels', inline: false }
       )

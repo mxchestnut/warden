@@ -126,14 +126,15 @@
 
 **Notes:** Messages with 3+ ⭐ reactions auto-added to Hall of Fame
 
-#### `!hc [add/remove/list] [character]`
-**Description:** Manage hardcore (permadeath) character list  
+#### `!hc [text|list|edit|delete]`
+**Description:** Manage headcanon entries for your characters  
 **Examples:**
-- `!hc add Gandalf` - Add character to hardcore list
-- `!hc remove Gandalf` - Remove from hardcore list
-- `!hc list` - View all hardcore characters
+- `!hc Gandalf saw a cute kitten and it changed his life` - Add headcanon
+- `!hc list` - View all your headcanons
+- `!hc edit 3 Gandalf actually hates pipeweed` - Edit headcanon #3
+- `!hc delete 2` - Delete headcanon #2
 
-**Notes:** Adds ⚠️ warnings when hardcore characters roll
+**Notes:** Personal character headcanons and backstory notes
 
 #### `!weeklyreport`
 **Description:** Generate weekly activity report  
@@ -331,8 +332,9 @@ Bot: 🎲 Rolled 1d20 (advantage): [12, 18] = 18
 !botset leaderboardchannel #stats
 
 # Mark hardcore campaign (RP tier)
-!hc add Gandalf
-!hc add Aragorn
+# Add headcanons (RP tier)
+!hc Gandalf loves collecting rare stones
+!hc Aragorn secretly writes poetry
 ```
 
 ---
