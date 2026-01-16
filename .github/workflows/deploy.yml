@@ -137,29 +137,3 @@ jobs:
           echo "❌ Deployment failed. Check logs above."
           echo "🔧 Manual intervention may be required."
           exit 1
-
-      - name: Notify deployment status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const status = '${{ job.status }}';
-            const emoji = status === 'success' ? '✅' : '❌';
-            const commit = context.payload.head_commit;
-            
-            const body = `## ${emoji} Production Deployment ${status === 'success' ? 'Successful' : 'Failed'}
-            
-            **Commit:** ${commit.message}
-            **Author:** ${commit.author.name}
-            **SHA:** \`${context.sha.substring(0, 7)}\`
-            
-            ${status === 'success' ? '🌐 [Visit Warden](https://warden.my)' : '⚠️ Check logs for details'}
-            `;
-            
-            github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: body
-            });
