@@ -7,6 +7,12 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   
+  /* Ignore system directories to prevent permission errors */
+  testIgnore: ['**/.Trash/**', '**/node_modules/**', '**/.git/**'],
+  
+  /* Global setup to create test user before all tests */
+  globalSetup: './e2e/global-setup.ts',
+  
   /* Run tests in files in parallel */
   fullyParallel: true,
   
@@ -72,7 +78,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'cd backend && npm run dev',
+      command: 'cd backend && E2E_TESTING=true npm run dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,

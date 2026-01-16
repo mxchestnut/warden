@@ -3,12 +3,13 @@ import { db } from '../db/index.js';
 import { botSettings, prompts } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { Client, TextChannel } from 'discord.js';
+import { logError, logInfo, logWarn } from '../utils/logger';
 
 let schedulerStarted = false;
 
 export function startPromptScheduler(client: Client) {
   if (schedulerStarted) {
-    console.log('Prompt scheduler already running');
+    logInfo('Prompt scheduler already running');
     return;
   }
 
@@ -17,12 +18,12 @@ export function startPromptScheduler(client: Client) {
     try {
       await checkAndPostDailyPrompts(client);
     } catch (error) {
-      console.error('Error in prompt scheduler:', error);
+      logError('Error in prompt scheduler', error);
     }
   });
 
   schedulerStarted = true;
-  console.log('Daily prompt scheduler started');
+  logInfo('Daily prompt scheduler started');
 }
 
 async function checkAndPostDailyPrompts(client: Client) {
@@ -47,14 +48,14 @@ async function checkAndPostDailyPrompts(client: Client) {
     try {
       await postDailyPrompt(client, settings);
     } catch (error) {
-      console.error(`Error posting daily prompt for guild ${settings.guildId}:`, error);
+      logError('Error posting daily prompt for guild', error, { guildId: settings.guildId });
     }
   }
 }
 
 async function postDailyPrompt(client: Client, settings: typeof botSettings.$inferSelect) {
   if (!settings.dailyPromptChannelId) {
-    console.warn(`Daily prompt enabled but no channel set for guild ${settings.guildId}`);
+    logWarn('Daily prompt enabled but no channel set', { guildId: settings.guildId });
     return;
   }
 
@@ -66,7 +67,7 @@ async function postDailyPrompt(client: Client, settings: typeof botSettings.$inf
     .limit(1);
 
   if (!randomPrompt.length) {
-    console.warn('No prompts available in database');
+    logWarn('No prompts available in database');
     return;
   }
 
@@ -77,7 +78,7 @@ async function postDailyPrompt(client: Client, settings: typeof botSettings.$inf
     const channel = await client.channels.fetch(settings.dailyPromptChannelId);
 
     if (!channel || !(channel instanceof TextChannel)) {
-      console.warn(`Channel ${settings.dailyPromptChannelId} not found or not a text channel`);
+      logWarn('Channel not found or not a text channel', { channelId: settings.dailyPromptChannelId });
       return;
     }
 
@@ -115,8 +116,8 @@ async function postDailyPrompt(client: Client, settings: typeof botSettings.$inf
       .set({ lastPromptPosted: new Date() })
       .where(eq(botSettings.guildId, settings.guildId));
 
-    console.log(`Posted daily prompt to guild ${settings.guildId}`);
+    logInfo('Posted daily prompt to guild', { guildId: settings.guildId });
   } catch (error) {
-    console.error(`Failed to post prompt to channel ${settings.dailyPromptChannelId}:`, error);
+    logError('Failed to post prompt to channel', error, { channelId: settings.dailyPromptChannelId });
   }
 }

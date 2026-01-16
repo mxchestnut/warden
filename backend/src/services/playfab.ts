@@ -2,6 +2,7 @@ import PlayFab from 'playfab-sdk/Scripts/PlayFab/PlayFab';
 import PlayFabClient from 'playfab-sdk/Scripts/PlayFab/PlayFabClient';
 import * as zlib from 'zlib';
 import axios from 'axios';
+import { logError, logInfo, logDebug, logWarn } from '../utils/logger';
 import type {
   PlayFabResult,
   PlayFabError,
@@ -49,7 +50,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
       if (error) {
         // If username login fails with "User not found", try email login
         if ((error as any).error === 'AccountNotFound' || (error as any).errorCode === 1001) {
-          console.log('Username login failed, trying email login...');
+          logDebug('Username login failed, trying email login', { username });
 
           const emailRequest = {
             TitleId: TITLE_ID,
@@ -62,19 +63,19 @@ export async function loginToPlayFab(username: string, password: string): Promis
 
           PlayFabClient.LoginWithEmailAddress(emailRequest, (emailError: PlayFabError | null, emailResult: PlayFabResult | undefined) => {
             if (emailError) {
-              console.error('PlayFab email login error:', JSON.stringify(emailError, null, 2));
+              logError('PlayFab email login error', emailError);
               const errorMsg = emailError.errorMessage || emailError.error || 'PlayFab login failed';
               reject(new Error(errorMsg));
               return;
             }
 
             if (!emailResult || !emailResult.data) {
-              console.error('PlayFab email login - no result data. Result:', emailResult);
+              logError('PlayFab email login - no result data', undefined, { hasResult: !!emailResult });
               reject(new Error('No data returned from PlayFab'));
               return;
             }
 
-            console.log('PlayFab email login successful for:', username);
+            logInfo('PlayFab email login successful', { username });
             resolve({
               playfabId: emailResult.data.PlayFabId,
               sessionTicket: emailResult.data.SessionTicket,
@@ -82,7 +83,7 @@ export async function loginToPlayFab(username: string, password: string): Promis
             });
           });
         } else {
-          console.error('PlayFab login error details:', JSON.stringify(error, null, 2));
+          logError('PlayFab login error', error);
           const errorMsg = error.errorMessage || error.error || 'PlayFab login failed';
           reject(new Error(errorMsg));
         }
@@ -90,12 +91,12 @@ export async function loginToPlayFab(username: string, password: string): Promis
       }
 
       if (!result || !result.data) {
-        console.error('PlayFab login - no result data. Result:', result);
+        logError('PlayFab login - no result data', undefined, { hasResult: !!result });
         reject(new Error('No data returned from PlayFab'));
         return;
       }
 
-      console.log('PlayFab login successful for:', username);
+      logInfo('PlayFab login successful', { username });
       resolve({
         playfabId: result.data.PlayFabId,
         sessionTicket: result.data.SessionTicket,
@@ -119,12 +120,12 @@ export async function getUserData(sessionTicket: string): Promise<Record<string,
 
     PlayFabClient.GetUserData(request, (error: PlayFabError | null, result: PlayFabResult<PlayFabUserDataResult> | undefined) => {
       if (error) {
-        console.error('GetUserData error:', JSON.stringify(error, null, 2));
+        logError('GetUserData error', error);
         reject(new Error(error.errorMessage || 'Failed to get user data'));
         return;
       }
 
-      console.log('GetUserData success, data keys:', Object.keys(result?.data?.Data || {}));
+      logDebug('GetUserData success', { dataKeys: Object.keys(result?.data?.Data || {}) });
       resolve(result?.data?.Data || {});
     });
   });
@@ -140,7 +141,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
     const decoded = JSON.parse(Buffer.from(shareKey, 'base64').toString('utf-8'));
     const { account, character } = decoded;
 
-    console.log('Fetching shared character:', { account, character });
+    logDebug('Fetching shared character', { account, character });
 
     // Use PlayFab Client API with anonymous login to access public data
     // This requires the character to be publicly shared
@@ -152,7 +153,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
         TitleId: TITLE_ID
       }, (error: any, _result: any) => {
         if (error) {
-          console.error('PlayFab anonymous login error:', error);
+          logError('PlayFab anonymous login error', error);
           return reject(new Error('Failed to authenticate with PathCompanion'));
         }
 
@@ -162,7 +163,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
           Keys: [character]
         }, (error2: any, result2: any) => {
           if (error2) {
-            console.error('PlayFab GetUserData error:', error2);
+            logError('PlayFab GetUserData error for shared character', error2);
             return reject(new Error('Character not found or not publicly shared'));
           }
 
@@ -179,7 +180,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
             const decompressed = zlib.inflateSync(compressed);
             const charData = JSON.parse(decompressed.toString('utf-8'));
 
-            console.log('Successfully decompressed character:', charData.name || 'Unknown');
+            logInfo('Successfully decompressed character', { characterName: charData.name || 'Unknown' });
 
             resolve({
               characterId: character,
@@ -188,7 +189,7 @@ export async function getCharacterFromShareKey(shareKey: string): Promise<PathCo
               lastModified: new Date(charValue.LastUpdated || Date.now()),
             });
           } catch (_e) {
-            console.error('Failed to decompress character data:', _e);
+            logError('Failed to decompress character data', _e);
             reject(new Error('Failed to parse character data'));
           }
         });
@@ -232,7 +233,7 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
               try {
                 const plainText = buffer.toString('utf8');
                 charData = JSON.parse(plainText);
-                console.log(`Character ${characterId} parsed as plain JSON (not compressed)`);
+                logDebug('Character parsed as plain JSON (not compressed)', { characterId });
                 resolve({
                   characterId,
                   characterName: charData.name || charData.characterName || charData.Name || 'Unnamed Character',
@@ -240,10 +241,10 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
                   lastModified: new Date(charValue.LastUpdated || Date.now()),
                 });
               } catch (parseErr) {
-                console.error(`Failed to parse character ${characterId} data:`, {
+                logError('Failed to parse character data', parseErr, {
+                  characterId,
                   inflateError: err.message,
                   inflateRawError: err2.message,
-                  parseError: parseErr,
                   bufferHex: buffer.toString('hex').substring(0, 100)
                 });
                 reject(new Error('Failed to decompress/parse character data'));
@@ -254,7 +255,7 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
             // inflateRaw succeeded
             try {
               const decompressedStr = decompressed2.toString('utf8');
-              console.log(`Decompressed ${characterId} with inflateRaw:`, decompressedStr.substring(0, 200));
+              logDebug('Decompressed with inflateRaw', { characterId, preview: decompressedStr.substring(0, 200) });
               charData = JSON.parse(decompressedStr);
               resolve({
                 characterId,
@@ -263,7 +264,7 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
                 lastModified: new Date(charValue.LastUpdated || Date.now()),
               });
             } catch (parseErr) {
-              console.error(`Failed to parse inflateRaw decompressed ${characterId}:`, parseErr);
+              logError('Failed to parse inflateRaw decompressed data', parseErr, { characterId });
               reject(new Error('Failed to parse character data'));
             }
           });
@@ -273,15 +274,16 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
         // inflate succeeded
         try {
           const decompressedStr = decompressed.toString('utf8');
-          console.log(`Decompressed ${characterId} with inflate:`, decompressedStr.substring(0, 200));
+          logDebug('Decompressed with inflate', { characterId, preview: decompressedStr.substring(0, 200) });
           charData = JSON.parse(decompressedStr);
 
           // Log the full structure to find the name
-          console.log(`Full character structure keys for ${characterId}:`, Object.keys(charData));
-          if (charData.characterInfo) {
-            console.log(`characterInfo keys:`, Object.keys(charData.characterInfo));
-            console.log(`characterInfo first 500 chars:`, JSON.stringify(charData.characterInfo).substring(0, 500));
-          }
+          logDebug('Character structure', { 
+            characterId, 
+            keys: Object.keys(charData),
+            characterInfoKeys: charData.characterInfo ? Object.keys(charData.characterInfo) : undefined,
+            characterInfoPreview: charData.characterInfo ? JSON.stringify(charData.characterInfo).substring(0, 500) : undefined
+          });
 
           // Extract character name from PathCompanion structure
           const characterName = charData.characterInfo?.characterName ||
@@ -293,7 +295,7 @@ export async function getCharacter(sessionTicket: string, characterId: string): 
                                 charData.basicInfo?.name ||
                                 characterId;  // Fallback to ID instead of "Unnamed Character"
 
-          console.log(`Extracted character name for ${characterId}: ${characterName}`);
+          logDebug('Extracted character name', { characterId, characterName });
 
           resolve({
             characterId,

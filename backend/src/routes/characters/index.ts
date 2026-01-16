@@ -13,6 +13,7 @@ import {
 import { eq, and, isNull, inArray } from 'drizzle-orm';
 import { isAuthenticated } from '../../middleware/auth';
 import { sendRollToDiscord } from '../../services/discordBot';
+import { logError, logInfo, logDebug } from '../../utils/logger';
 import { deleteFromS3 } from '../../config/s3';
 import multer from 'multer';
 import path from 'path';

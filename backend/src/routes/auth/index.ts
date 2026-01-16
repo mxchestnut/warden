@@ -13,7 +13,7 @@ const router = Router();
 // Rate limiting for login attempts - 5 attempts per 15 minutes
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: process.env.NODE_ENV === 'test' || process.env.E2E_TESTING ? 1000 : 5,  // Relaxed for testing
   message: 'Too many login attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -22,7 +22,7 @@ const loginLimiter = rateLimit({
 // Rate limiting for registration - 20 accounts per hour per IP (relaxed for testing)
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'test' || process.env.E2E_TESTING ? 1000 : 20,  // Relaxed for testing
   message: 'Too many accounts created, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

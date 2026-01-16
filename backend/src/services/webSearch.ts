@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { logError, logInfo, logDebug } from '../utils/logger';
 
 /**
  * Performs a simple Google search and extracts the first snippet
@@ -7,7 +8,7 @@ import * as cheerio from 'cheerio';
  */
 export async function searchGoogle(query: string): Promise<{ title: string; snippet: string; url: string } | null> {
   try {
-    console.log(`Attempting Google search for: "${query}"`);
+    logDebug('Attempting Google search', { query });
     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     const response = await axios.get(searchUrl, {
       headers: {
@@ -38,21 +39,21 @@ export async function searchGoogle(query: string): Promise<{ title: string; snip
       const snippet = firstResult.find('.VwiC3b, .IsZvec, [class*="snippet"], .st').first().text();
       const url = firstResult.find('a').first().attr('href') || '';
 
-      console.log(`Google search result found - Title: ${title.substring(0, 50)}, Snippet length: ${snippet.length}`);
+      logDebug('Google search result found', { title: title.substring(0, 50), snippetLength: snippet.length });
 
       if (title && snippet && snippet.length > 30) {
         return { title, snippet, url };
       } else {
-        console.log('Google result incomplete - title or snippet missing/too short');
+        logDebug('Google result incomplete - title or snippet missing/too short');
       }
     } else {
-      console.log('No Google search results found in page');
+      logDebug('No Google search results found in page');
     }
 
     return null;
   } catch (error: Error | unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Web search error:', err);
+    logError('Web search error', err);
     throw err;
   }
 }

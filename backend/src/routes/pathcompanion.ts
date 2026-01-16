@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { isAuthenticated } from '../middleware/auth';
 import * as PlayFabService from '../services/playfab';
 import crypto from 'crypto';
+import { logError, logInfo, logDebug } from '../utils/logger';
 
 const router = Router();
 
@@ -58,7 +59,7 @@ async function refreshSessionIfNeeded(userId: number): Promise<string> {
 
     return auth.sessionTicket;
   } catch (error) {
-    console.error(`Failed to refresh session for user ${userId}:`, error);
+    logError('Failed to refresh session for user', error, { userId });
 
     // Check if it's a decryption error (encryption key changed)
     if (error instanceof Error && error.message.includes('bad decrypt')) {

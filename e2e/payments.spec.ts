@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// NOTE: Payment tests require Stripe configuration and webhook setup
-// These are disabled pending payment feature completion
-// Enable with: test.describe('Stripe Payment Flow', () => {
+// Payment/tier features were removed from the application
 test.describe.skip('Stripe Payment Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Login first

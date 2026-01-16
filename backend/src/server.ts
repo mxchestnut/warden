@@ -44,19 +44,27 @@ declare global {
   var __SERVER_STARTED__: boolean | undefined;
 }
 
-// Initialize Sentry
-Sentry.init({
-  dsn: 'https://3703aff1185c87a288fbe6470adcd55e@o4510280685977605.ingest.us.sentry.io/4510601564913664',
-  integrations: [
-    nodeProfilingIntegration(),
-  ],
-  // Performance Monitoring
-  tracesSampleRate: 1.0, // Capture 100% of transactions
-  // Profilingenv.NODE_ENV
-  profilesSampleRate: 1.0, // Profile 100% of transactions
-  // Environment
-  environment: process.env.NODE_ENV || 'development',
-});
+// Initialize Sentry (only if DSN is provided)
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    integrations: [
+      nodeProfilingIntegration(),
+    ],
+    // Performance Monitoring - 10% sampling in production to reduce costs
+    tracesSampleRate: isProduction ? 0.1 : 1.0,
+    // Profiling - 10% sampling in production to reduce costs
+    profilesSampleRate: isProduction ? 0.1 : 1.0,
+    // Environment
+    environment: env.NODE_ENV,
+  });
+  logger.info('Sentry error tracking initialized', { 
+    environment: env.NODE_ENV,
+    sampling: isProduction ? '10%' : '100%' 
+  });
+} else {
+  logger.warn('Sentry DSN not configured - error tracking disabled');
+}
 
 async function startServer() {
   // Load secrets from AWS Secrets Manager (or .env in development)

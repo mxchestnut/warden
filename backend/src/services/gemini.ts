@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { logError, logInfo, logDebug } from '../utils/logger';
 
 // Lazy load API key to allow it to be set by server.ts first
 function getApiKey(): string {
@@ -32,7 +33,7 @@ export async function askGemini(question: string, context?: string): Promise<str
     const response = result.response;
     return response.text();
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
+    logError('Error calling Gemini API', error);
     throw error;
   }
 }
@@ -59,7 +60,7 @@ export async function summarizeSession(messages: string[]): Promise<string> {
     const response = result.response;
     return response.text();
   } catch (error) {
-    console.error('Error summarizing session:', error);
+    logError('Error summarizing session', error);
     throw error;
   }
 }
@@ -69,7 +70,7 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
   const cheerio = require('cheerio');
 
   try {
-    console.log(`Learning from URL: ${url}`);
+    logInfo('Learning from URL', { url });
     const response = await axios.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -148,15 +149,13 @@ export async function learnFromUrl(url: string): Promise<{ question: string; ans
       }
     }
 
-    console.log(`Extracted ${entries.length} entries from ${url}`);
+    logInfo('Extracted entries from URL', { url, entryCount: entries.length });
     return entries;
   } catch (error: Error | unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Error learning from URL:', err);
-    console.error('Error details:', {
-      message: (err as any).message,
+    logError('Error learning from URL', err, {
       code: (err as any).code,
-      response: (err as any).response?.status,
+      responseStatus: (err as any).response?.status,
       url: url
     });
     throw err;
