@@ -67,4 +67,7 @@ uploads/
 # Unused routes (archived for future Discord bot features)
 backend/src/routes/_unused/
 frontend-src/src/pages/_unused/
-CHAT
+
+# Internal documentation (not for GitHub)
+.github/copilot-instructions.md
+.github/DEPLOYMENT_SETUP.md
