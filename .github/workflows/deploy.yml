@@ -126,7 +126,7 @@ jobs:
             echo "� Deploying frontend files to nginx..."
             sudo rm -rf /var/www/html/*
             sudo cp -r dist/* /var/www/html/
-            sudo cp nginx.conf /etc/nginx/sites-available/default
+            sudo cp nginx-site.conf /etc/nginx/sites-available/default
             
             echo "🔄 Restarting nginx..."
             sudo nginx -t
