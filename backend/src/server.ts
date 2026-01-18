@@ -58,10 +58,10 @@ if (env.SENTRY_DSN) {
     // Environment
     environment: env.NODE_ENV,
   });
-  logger.info('Sentry error tracking initialized', { 
+  logger.info({ 
     environment: env.NODE_ENV,
     sampling: isProduction ? '10%' : '100%' 
-  });
+  }, 'Sentry error tracking initialized');
 } else {
   logger.warn('Sentry DSN not configured - error tracking disabled');
 }
