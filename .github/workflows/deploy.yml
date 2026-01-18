@@ -123,25 +123,20 @@ jobs:
             echo "🔨 Building frontend..."
             npm run build
             
-            echo "🐳 Rebuilding frontend Docker container..."
-            docker build -t warden-frontend .
+            echo "� Deploying frontend files to nginx..."
+            sudo rm -rf /var/www/html/*
+            sudo cp -r dist/* /var/www/html/
+            sudo cp nginx.conf /etc/nginx/sites-available/default
             
-            echo "🔄 Restarting frontend container..."
-            docker stop warden-frontend || true
-            docker rm warden-frontend || true
-            docker run -d \
-              --name warden-frontend \
-              --restart unless-stopped \
-              -p 80:80 \
-              -p 443:443 \
-              -v /etc/letsencrypt:/etc/letsencrypt:ro \
-              warden-frontend
+            echo "🔄 Restarting nginx..."
+            sudo nginx -t
+            sudo systemctl reload nginx
             
             echo "⏳ Waiting for frontend to start..."
-            sleep 3
+            sleep 2
             
             echo "🏥 Frontend health check..."
-            curl -f http://localhost/health || exit 1
+            curl -f http://localhost/ || exit 1
             
             echo "✅ Deployment completed successfully!"
 
