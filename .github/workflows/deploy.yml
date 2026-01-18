@@ -110,11 +110,38 @@ jobs:
             pm2 restart warden-backend
             pm2 save
             
-            echo "⏳ Waiting for server to start..."
+            echo "⏳ Waiting for backend to start..."
             sleep 5
             
-            echo "🏥 Health check..."
+            echo "🏥 Backend health check..."
             curl -f http://localhost:3000/health || exit 1
+            
+            echo "📦 Installing frontend dependencies..."
+            cd ../frontend-src
+            npm ci
+            
+            echo "🔨 Building frontend..."
+            npm run build
+            
+            echo "🐳 Rebuilding frontend Docker container..."
+            docker build -t warden-frontend .
+            
+            echo "🔄 Restarting frontend container..."
+            docker stop warden-frontend || true
+            docker rm warden-frontend || true
+            docker run -d \
+              --name warden-frontend \
+              --restart unless-stopped \
+              -p 80:80 \
+              -p 443:443 \
+              -v /etc/letsencrypt:/etc/letsencrypt:ro \
+              warden-frontend
+            
+            echo "⏳ Waiting for frontend to start..."
+            sleep 3
+            
+            echo "🏥 Frontend health check..."
+            curl -f http://localhost/health || exit 1
             
             echo "✅ Deployment completed successfully!"
 
