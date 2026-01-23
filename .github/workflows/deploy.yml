@@ -134,12 +134,8 @@ jobs:
             sudo chown -R www-data:www-data /var/www/html
             
             echo "⚙️  Updating nginx configuration..."
-            # Use reverse proxy config for production (handles /api forwarding to backend)
-            sudo cp nginx-reverse-proxy.conf /etc/nginx/sites-available/default
-            
-            echo "🔄 Restarting nginx..."
-            sudo nginx -t
-            sudo systemctl reload nginx
+            chmod +x ../scripts/complete-nginx-fix.sh
+            ../scripts/complete-nginx-fix.sh
             
             echo "⏳ Waiting for frontend to start..."
             sleep 2
