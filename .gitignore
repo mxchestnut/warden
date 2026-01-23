@@ -71,3 +71,4 @@ frontend-src/src/pages/_unused/
 # Internal documentation (not for GitHub)
 .github/copilot-instructions.md
 .github/DEPLOYMENT_SETUP.md
+private-readme.md

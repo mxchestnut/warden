@@ -73,6 +73,11 @@ jobs:
           test -d dist/assets || exit 1
           echo "✅ Frontend build verified"
 
+      - name: Verify nginx configuration
+        run: |
+          chmod +x scripts/verify-nginx-config.sh
+          ./scripts/verify-nginx-config.sh
+
   # Production deployment
   deploy:
     name: Deploy to Production
