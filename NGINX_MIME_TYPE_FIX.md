@@ -11,18 +11,28 @@ because its MIME type ('text/html') is not a supported stylesheet MIME type
 
 ## Root Cause
 
-The nginx configuration was **missing the critical `include /etc/nginx/mime.types;` directive**, which tells nginx what Content-Type header to use for different file extensions.
+The nginx configuration had **TWO critical issues**:
+
+1. **Missing `include /etc/nginx/mime.types;` directive** - nginx didn't know what Content-Type to use for different file extensions
+2. **Reverse proxy misconfiguration** - nginx was forwarding `/assets/` requests to the Express backend instead of serving them directly from disk
+
+The Express backend doesn't handle static files, so it served CSS files as `text/html` (the default Content-Type), causing browsers to reject them.
 
 Without this directive:
 - `.css` files → served as `application/octet-stream` or fallback to `text/html`
 - `.js` files → served incorrectly
 - Browsers reject files with wrong MIME types for security reasons
 
+Without proper reverse proxy configuration:
+- `/assets/` requests → forwarded to Express backend
+- Backend has no static file handler → returns default HTML response
+- CSS files served with `text/html` MIME type
+
 ## The Permanent Fix
 
 ### 1. Added MIME Type Configuration
 
-Both `nginx-site.conf` and `nginx.conf` now include:
+All nginx configs now include:
 
 ```nginx
 server {
@@ -39,16 +49,25 @@ server {
 }
 ```
 
-### 2. Explicit /assets/ Handling
+### 2. Created Proper Reverse Proxy Configuration
 
-Prevent SPA routing from serving `index.html` for missing assets:
+Production uses `nginx-reverse-proxy.conf` which:
+- Serves static assets (CSS, JS, images) directly from `/var/www/html`
+- Proxies `/api/*` requests to Express backend on port 3000
+- Prevents backend from handling static file requests
 
 ```nginx
-# Explicitly handle /assets directory to prevent fallback to index.html
+# API requests go to backend
+location /api/ {
+    proxy_pass http://backend;
+    proxy_set_header Host $host;
+    # ... other proxy headers
+}
+
+# Static assets served directly by nginx
 location /assets/ {
     expires 7d;
-    add_header Cache-Control "public, must-revalidate";
-    try_files $uri =404;
+    try_files $uri =404;  # Don't proxy to backend
 }
 ```
 
@@ -59,6 +78,7 @@ Added automated check in deployment pipeline that verifies:
 - ✅ default_type is set
 - ✅ /assets/ location block exists
 - ✅ SPA routing is configured
+- ✅ Reverse proxy config is valid
 
 Run locally: `./scripts/verify-nginx-config.sh`
 
@@ -132,10 +152,12 @@ curl -I https://warden.my/assets/index-abc123.js
 
 ## Related Files
 
-- [`frontend-src/nginx-site.conf`](../frontend-src/nginx-site.conf) - Production nginx config
+- [`frontend-src/nginx-reverse-proxy.conf`](../frontend-src/nginx-reverse-proxy.conf) - **Production config** (reverse proxy)
+- [`frontend-src/nginx-site.conf`](../frontend-src/nginx-site.conf) - Standalone frontend config
 - [`frontend-src/nginx.conf`](../frontend-src/nginx.conf) - Docker nginx config
 - [`scripts/verify-nginx-config.sh`](../scripts/verify-nginx-config.sh) - Configuration validator
 - [`scripts/fix-nginx-prod.sh`](../scripts/fix-nginx-prod.sh) - Emergency fix script
+- [`scripts/diagnose-nginx.sh`](../scripts/diagnose-nginx.sh) - Diagnostic script
 - [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) - CI/CD pipeline
 
 ## Common Nginx MIME Type Issues
