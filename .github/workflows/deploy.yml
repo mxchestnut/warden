@@ -134,8 +134,8 @@ jobs:
             sudo chown -R www-data:www-data /var/www/html
             
             echo "⚙️  Updating nginx configuration..."
-            chmod +x ../scripts/complete-nginx-fix.sh
-            ../scripts/complete-nginx-fix.sh
+            chmod +x ../scripts/auto-fix-nginx.sh
+            ../scripts/auto-fix-nginx.sh
             
             echo "⏳ Waiting for frontend to start..."
             sleep 2

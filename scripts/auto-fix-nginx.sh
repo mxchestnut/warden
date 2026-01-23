@@ -51,8 +51,13 @@ if [ -f "$NGINX_CONF" ] && sudo grep -q "listen 443 ssl" "$NGINX_CONF"; then
     # Extract SSL paths
     SSL_CERT=$(sudo grep -m 1 "ssl_certificate " "$NGINX_CONF" | grep -v "ssl_certificate_key" | awk '{print $2}' | tr -d ';')
     SSL_KEY=$(sudo grep -m 1 "ssl_certificate_key" "$NGINX_CONF" | awk '{print $2}' | tr -d ';')
+    
+    # Get domain from certificate for proper server_name
+    CERT_DOMAIN=$(sudo openssl x509 -in "$SSL_CERT" -noout -subject 2>/dev/null | sed 's/.*CN = //' || echo "warden.my")
+    
     echo "SSL Cert: $SSL_CERT"
     echo "SSL Key: $SSL_KEY"
+    echo "Certificate Domain: $CERT_DOMAIN"
 else
     echo "ℹ️  No SSL configuration"
 fi
@@ -67,7 +72,7 @@ if [ "$HAS_SSL" = true ]; then
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
-    server_name warden.my www.warden.my;
+    server_name $CERT_DOMAIN www.$CERT_DOMAIN;
     
     location /.well-known/acme-challenge/ {
         root /var/www/html;
@@ -82,7 +87,7 @@ server {
 server {
     listen 443 ssl http2 default_server;
     listen [::]:443 ssl http2 default_server;
-    server_name warden.my www.warden.my;
+    server_name $CERT_DOMAIN www.$CERT_DOMAIN;
     
     root /var/www/html;
     index index.html;
