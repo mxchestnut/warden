@@ -1,0 +1,34 @@
+name: Emergency Nginx Fix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-nginx:
+    name: Fix Nginx Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fix nginx configuration on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          script: |
+            cd warden-backend
+            git pull origin main
+            
+            echo "🔧 Running complete nginx fix..."
+            chmod +x scripts/complete-nginx-fix.sh
+            ./scripts/complete-nginx-fix.sh
+            
+            echo ""
+            echo "✅ Fix completed!"
+            echo ""
+            echo "📋 Current nginx configuration:"
+            sudo cat /etc/nginx/sites-available/default
