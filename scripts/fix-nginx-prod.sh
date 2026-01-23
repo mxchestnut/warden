@@ -16,7 +16,7 @@ sudo cp -r dist/. /var/www/html/
 sudo chown -R www-data:www-data /var/www/html
 
 echo "⚙️  Updating nginx configuration with MIME type support..."
-sudo cp nginx-site.conf /etc/nginx/sites-available/default
+sudo cp nginx-reverse-proxy.conf /etc/nginx/sites-available/default
 
 echo "🔍 Verifying MIME types file exists..."
 if [ ! -f /etc/nginx/mime.types ]; then

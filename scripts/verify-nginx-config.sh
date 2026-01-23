@@ -7,6 +7,7 @@ set -e
 
 CONFIG_FILE="frontend-src/nginx-site.conf"
 DOCKER_CONFIG="frontend-src/nginx.conf"
+PROXY_CONFIG="frontend-src/nginx-reverse-proxy.conf"
 
 echo "🔍 Verifying nginx configurations..."
 echo ""
@@ -57,6 +58,7 @@ total_errors=0
 
 check_config "$CONFIG_FILE" || total_errors=$((total_errors + $?))
 check_config "$DOCKER_CONFIG" || total_errors=$((total_errors + $?))
+check_config "$PROXY_CONFIG" || total_errors=$((total_errors + $?))
 
 if [ $total_errors -eq 0 ]; then
     echo "✅ All nginx configurations are valid!"
