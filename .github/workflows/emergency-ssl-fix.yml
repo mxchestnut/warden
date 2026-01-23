@@ -1,0 +1,31 @@
+name: Emergency SSL Fix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-ssl:
+    name: Fix SSL Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fix SSL configuration on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          script: |
+            cd warden-backend
+            git pull origin main
+            
+            echo "🚨 Running emergency SSL fix..."
+            chmod +x scripts/emergency-ssl-fix.sh
+            ./scripts/emergency-ssl-fix.sh
+            
+            echo ""
+            echo "✅ SSL fix completed!"
