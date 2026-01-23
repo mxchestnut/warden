@@ -1,0 +1,26 @@
+name: Switch to Warden Certificate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  switch-cert:
+    name: Switch to warden.my SSL Certificate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Switch certificate on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          script: |
+            cd warden-backend
+            git pull origin main
+            chmod +x scripts/switch-to-warden-cert.sh
+            ./scripts/switch-to-warden-cert.sh
