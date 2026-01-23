@@ -23,12 +23,9 @@ jobs:
             cd warden-backend
             git pull origin main
             
-            echo "🔧 Running complete nginx fix..."
-            chmod +x scripts/complete-nginx-fix.sh
-            ./scripts/complete-nginx-fix.sh
+            echo "🔧 Running auto nginx fix..."
+            chmod +x scripts/auto-fix-nginx.sh
+            ./scripts/auto-fix-nginx.sh
             
             echo ""
             echo "✅ Fix completed!"
-            echo ""
-            echo "📋 Current nginx configuration:"
-            sudo cat /etc/nginx/sites-available/default
