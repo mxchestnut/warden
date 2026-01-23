@@ -433,7 +433,7 @@ export function CharacterEdit() {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch(`http://localhost:3000/api/pathcompanion/sync/${character.id}`, {
+                        const response = await fetch(`/api/pathcompanion/sync/${character.id}`, {
                           method: 'POST',
                           credentials: 'include'
                         });

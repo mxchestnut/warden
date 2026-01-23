@@ -364,7 +364,7 @@ export function CharacterEdit() {
                           const formData = new FormData();
                           formData.append('avatar', file);
 
-                          const response = await fetch('http://localhost:3000/api/characters/upload-avatar', {
+                          const response = await fetch('/api/characters/upload-avatar', {
                             method: 'POST',
                             credentials: 'include',
                             body: formData
@@ -413,7 +413,7 @@ export function CharacterEdit() {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch(`http://localhost:3000/api/pathcompanion/sync/${character.id}`, {
+                        const response = await fetch(`/api/pathcompanion/sync/${character.id}`, {
                           method: 'POST',
                           credentials: 'include'
                         });
