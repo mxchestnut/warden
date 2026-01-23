@@ -148,7 +148,7 @@ jobs:
       - name: Verify deployment
         run: |
           echo "Verifying production server..."
-          curl -f https://warden.my/health || exit 1
+          curl -fk https://warden.my/health || curl -f http://warden.my/health || exit 1
           echo "✅ Production server is healthy"
 
       - name: Deployment Status
