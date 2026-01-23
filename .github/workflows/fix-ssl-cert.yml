@@ -1,0 +1,51 @@
+name: Fix SSL Certificate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-ssl-cert:
+    name: Fix SSL Certificate Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fix SSL certificate on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          command_timeout: 15m
+          script: |
+            cd warden-backend
+            git pull origin main
+            
+            echo "🔧 Fixing SSL certificate configuration..."
+            chmod +x scripts/fix-ssl-cert.sh
+            ./scripts/fix-ssl-cert.sh
+            
+            echo ""
+            echo "📋 Getting SSL certificate for warden.my..."
+            
+            # Stop nginx temporarily
+            sudo systemctl stop nginx
+            
+            # Get certificate using certbot standalone mode
+            sudo certbot certonly --standalone --non-interactive --agree-tos \
+              --email admin@warden.my \
+              -d warden.my -d www.warden.my \
+              --preferred-challenges http
+            
+            # Start nginx
+            sudo systemctl start nginx
+            
+            echo ""
+            echo "🔄 Running fix script again with new certificate..."
+            ./scripts/fix-ssl-cert.sh
+            
+            echo ""
+            echo "✅ SSL certificate fixed!"
